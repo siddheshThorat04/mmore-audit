@@ -32,5 +32,29 @@ tr:last-child td { border-bottom:0 } .n { text-align:right } tr.you td { backgro
 .fine { color:var(--muted); font-size:13px; margin-top:14px }
 .cta { margin-top:30px; padding:20px; border-radius:8px; background:var(--pin); color:var(--ink) } .cta p { margin:0 0 12px; font-weight:600 }
 .error { background:#fde8e4; color:#7a2216; padding:10px 14px; border-radius:8px; margin-top:16px }
-@media print { .no-print, .top .note { display:none } body { background:#fff } .scroll { border:0 } }
+.print-only { display: none; }
+@media print {
+  @page { size: A4; margin: 14mm 12mm; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { background: #fff; font-family: 'Inter', system-ui, sans-serif; color: #101012; }
+  .no-print, .top { display: none !important; }
+  main { max-width: none; padding: 0; }
+  .print-head { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; margin-bottom: 18px; border-bottom: 3px solid #e63946; }
+  .print-head .brand { display: flex; align-items: center; gap: 10px; }
+  .print-head img { height: 40px; width: auto; }
+  .print-head strong { display: block; font-size: 16px; }
+  .print-head span { font-size: 10px; color: #8b8b93; letter-spacing: .14em; text-transform: uppercase; }
+  .print-head .meta { font-size: 11px; color: #8b8b93; }
+  h1 { font: 800 24px 'Inter', sans-serif; letter-spacing: -.01em; margin: 0 0 6px; }
+  h2 { font: 700 14px 'Inter', sans-serif; margin: 22px 0 8px; padding-left: 8px; border-left: 4px solid #e63946; }
+  .lead { color: #3a3a3f; font-size: 12.5px; }
+  .scroll { overflow: visible; border: 1px solid #e5e3e1; }
+  table { min-width: 0; }
+  th { background: #fdf1f1; color: #3a3a3f; font-size: 11px; }
+  th, td { font-size: 12px; padding: 8px 10px; }
+  tr { break-inside: avoid; }
+  tr.you td { background: #fdf1f1; }
+  .fine { font-size: 10px; }
+  .print-foot { display: block; margin-top: 22px; padding: 12px 14px; background: #101012; color: #fff; border-radius: 8px; font-size: 12px; }
+}
 @media (prefers-reduced-motion: reduce) { * { transition:none !important; animation:none !important } }

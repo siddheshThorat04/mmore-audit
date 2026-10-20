@@ -168,3 +168,54 @@ tr.you td:first-child { box-shadow: inset 4px 0 0 var(--red) }
   .fine { font-size: 10px }
   .print-foot { display: block; margin-top: 22px; padding: 12px 14px; background: var(--black); color: #fff; border-radius: 8px; font-size: 12px }
 }
+
+
+/* ---------- Landing logo, search box ---------- */
+.landing-logo { display: block; height: 64px; width: auto; margin: 34px 0 0 }
+.landing-logo + h1 { margin-top: 18px }
+.search-card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 12px; margin-top: 20px; box-shadow: 0 20px 40px -28px rgba(16, 16, 18, .35) }
+.combo { position: relative; width: 100% }
+.combo gmp-place-autocomplete { width: 100%; color-scheme: light }
+.linklike { background: none; box-shadow: none; color: var(--red-dark); padding: 10px 2px; font-weight: 600; font-size: 14px; text-decoration: underline }
+.linklike:hover:not(:disabled) { background: none; color: var(--red) }
+
+/* Selected searches are red, unselected are white */
+.chip.on::before { content: '\2713'; margin-right: 6px }
+
+/* ---------- Report hero: stats on the left, map on the right ---------- */
+.hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); background: #fff; border: 1px solid var(--line); border-radius: 20px; overflow: hidden; margin-top: 24px }
+.hero-info { padding: 28px }
+.hero-info h1 { font-size: clamp(24px, 3.2vw, 32px); margin: 0 0 10px; max-width: none }
+.hero .stats { grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 18px 0 }
+.hero .stat { padding: 14px; border-radius: 12px; background: var(--off-white); border: 0 }
+.hero .stat b { font-size: 22px }
+.map-wrap { position: relative; min-height: 360px; background: #ece9e6 }
+.map { position: absolute; inset: 0 }
+.map-card { position: absolute; top: 16px; right: 16px; max-width: calc(100% - 32px); background: #fff; border-radius: 14px; padding: 10px 16px; box-shadow: 0 10px 28px -10px rgba(16, 16, 18, .4); display: flex; flex-direction: column }
+.map-card span { color: var(--muted); font-size: 12.5px; max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.map-note { position: absolute; left: 12px; bottom: 12px; background: rgba(255, 255, 255, .92); border-radius: 100px; padding: 4px 10px; font-size: 11.5px; color: var(--text2) }
+.pin-you { width: 30px; height: 30px; background: var(--red); border: 3px solid #fff; border-radius: 50% 50% 50% 0; transform: translateY(-6px) rotate(-45deg); box-shadow: 0 6px 14px rgba(16, 16, 18, .35); position: relative }
+.pin-you::after { content: ''; position: absolute; inset: 0; margin: auto; width: 8px; height: 8px; border-radius: 50%; background: #fff }
+
+/* ---------- WhatsApp ---------- */
+.cta a { display: inline-flex; align-items: center; gap: 8px }
+.cta a.wa { background: #25d366; box-shadow: 0 8px 20px -8px rgba(37, 211, 102, .6) }
+.cta a.wa:hover { background: #1ebe5b }
+.wa-fab { position: fixed; right: 20px; bottom: max(20px, env(safe-area-inset-bottom)); z-index: 50; display: flex; align-items: center; gap: 10px; background: #25d366; color: #fff; text-decoration: none; border-radius: 100px; padding: 14px; box-shadow: 0 12px 28px -8px rgba(37, 211, 102, .65); font-weight: 600; font-size: 14px; transition: background .15s, transform .15s }
+.wa-fab:hover { background: #1ebe5b; transform: translateY(-2px) }
+.wa-fab span { display: none }
+@media (min-width: 720px) { .wa-fab { padding: 12px 20px 12px 14px } .wa-fab span { display: inline } }
+
+@media (max-width: 820px) {
+  .hero { grid-template-columns: 1fr }
+  .map-wrap { order: -1; min-height: 260px }
+  .hero-info { padding: 20px }
+}
+
+@media print {
+  .hero { display: block; border: 0; background: none; margin-top: 0 }
+  .hero-info { padding: 0 }
+  .hero-info h1 { font-size: 24px }
+  .hero .stat { background: var(--off-white); padding: 10px 12px }
+  .hero .stat b { font-size: 18px }
+}

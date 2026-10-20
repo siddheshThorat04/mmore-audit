@@ -29,7 +29,7 @@ main { max-width: 1080px; margin: 0 auto; padding: 0 20px 48px }
   padding: 22px 0; margin-bottom: 8px; border-bottom: 1px solid var(--line);
 }
 .brand { display: flex; align-items: center; gap: 12px }
-.logo-img { width: 44px; height: 44px; object-fit: contain }
+.logo-img { width: 56px; height: 56px; object-fit: contain }
 .wordmark { font-weight: 700; font-size: 17px; letter-spacing: -.01em }
 .sub { font-size: 11px; color: var(--muted); letter-spacing: .14em; text-transform: uppercase; margin-top: 2px }
 .pill {
@@ -171,7 +171,7 @@ tr.you td:first-child { box-shadow: inset 4px 0 0 var(--red) }
 
 
 /* ---------- Landing logo, search box ---------- */
-.landing-logo { display: block; height: 64px; width: auto; margin: 34px 0 0 }
+.landing-logo { display: block; height: 96px; width: auto; margin: 34px 0 0 }
 .landing-logo + h1 { margin-top: 18px }
 .search-card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 12px; margin-top: 20px; box-shadow: 0 20px 40px -28px rgba(16, 16, 18, .35) }
 .combo { position: relative; width: 100% }

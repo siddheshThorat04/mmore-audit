@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { searchPlaces, getKeywords, runAudit } from './api.js'
 import { loadMaps, mapsAvailable } from './maps.js'
 
-const token = new URLSearchParams(window.location.search).get('t') || ''
 const fmt = (n) => (n == null ? '\u2013' : n.toLocaleString('en-IN'))
 const LOGO = 'https://ik.imagekit.io/p8bskkmqe/image_U0n_Ivvxn.png?updatedAt=1783403369073'
 const G_LOGO = 'https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png'
@@ -18,17 +17,24 @@ function WhatsAppIcon({ size = 22 }) {
   )
 }
 
-function PositionTrack({ position }) {
-  if (!position) return <span className="miss">Not in top 10</span>
-  const tone = position <= 3 ? 'good' : position <= 7 ? 'mid' : 'low'
-  return (
-    <span className="track" title={'Position ' + position}>
-      {Array.from({ length: 10 }, (_, i) => <i key={i} className={i + 1 === position ? 'pin ' + tone : ''} />)}
-      <b>#{position}</b>
-    </span>
-  )
-}
+// function PositionTrack({ position }) {
+//   if (!position) return <span className="miss">Not in top 10</span>
+//   const tone = position <= 3 ? 'good' : position <= 7 ? 'mid' : 'low'
+//   return (
+//     <span className="track" title={'Position ' + position}>
+//       {Array.from({ length: 10 }, (_, i) => <i key={i} className={i + 1 === position ? 'pin ' + tone : ''} />)}
+//       <b>#{position}</b>
+//     </span>
+//   )
+// }
 
+
+function RankBadge({ position }) {
+  // Beyond the top 10 (or not found): shown as +#10. Each tier has its own colour.
+  if (!position) return <span className="rank out" title="Not in the top 10">+#10</span>
+  const tier = position === 1 ? 'first' : position <= 3 ? 'top' : position <= 6 ? 'mid' : 'low'
+  return <span className={'rank ' + tier} title={'Position ' + position}>#{position}</span>
+}
 // Google's search-as-you-type box, the same widget the Business form in Frappe uses.
 function PlaceSearch({ onPick, onFail }) {
   const host = useRef(null)
@@ -121,13 +127,13 @@ export default function App() {
   const [error, setError] = useState('')
 
   const run = async (fn) => { setBusy(true); setError(''); try { await fn() } catch (e) { setError(e.message) } setBusy(false) }
-  const search = () => run(async () => setPlaces(await searchPlaces(query, token)))
+  const search = () => run(async () => setPlaces(await searchPlaces(query)))
   const choose = (p) => run(async () => {
-    const r = await getKeywords(p.place_id, token)
+    const r = await getKeywords(p.place_id)
     setChosen({ ...p, ...r.business }); setKeywords(r.keywords); setPicked(r.keywords); setPlaces(null); setStep('keywords')
   })
   const addKeyword = () => { const k = extra.trim().toLowerCase(); if (k && !keywords.includes(k)) { setKeywords([...keywords, k]); setPicked([...picked, k]) } setExtra('') }
-  const generate = () => run(async () => { setAudit(await runAudit(chosen.place_id, picked, token)); setStep('report') })
+  const generate = () => run(async () => { setAudit(await runAudit(chosen.place_id, picked)); setStep('report') })
 
   // The WhatsApp message changes with where the visitor is, so your team knows the context.
   const waText = step === 'report' && audit
@@ -229,12 +235,12 @@ export default function App() {
             <div className="scroll"><table>
               <thead><tr><th>Search</th><th className="n">Per month</th><th>Competition</th><th>Your Maps position</th></tr></thead>
               <tbody>{audit.keywords.map((k) => (
-                <tr key={k.keyword}><td>{k.keyword}</td><td className="n">{fmt(k.searches)}</td><td>{k.competition || '\u2013'}</td><td><PositionTrack position={k.position} /></td></tr>))}</tbody>
+                <tr key={k.keyword}><td>{k.keyword}</td><td className="n">{fmt(k.searches)}</td><td>{k.competition || '\u2013'}</td><td><RankBadge position={k.position} /></td></tr>))}</tbody>
             </table></div>
 
-            <h2>Businesses near you</h2>
+            <h2>Competitors</h2>
             <div className="scroll"><table>
-              <thead><tr><th>Business</th><th className="n">Rating</th><th className="n">Reviews</th></tr></thead>
+              <thead><tr><th>Competitor</th><th className="n">Rating</th><th className="n">Reviews</th></tr></thead>
               <tbody>{audit.competitors.map((c) => (
                 <tr key={c.name} className={c.you ? 'you' : ''}><td>{c.name}{c.you && ' (you)'}</td><td className="n">{c.rating ?? '\u2013'}</td><td className="n">{c.reviews}</td></tr>))}</tbody>
             </table></div>

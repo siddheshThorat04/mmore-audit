@@ -1,10 +1,10 @@
-// Sample data by default. With VITE_USE_MOCK=false the app calls these Frappe API scripts
-// (all take the lead token from the link: ?t=...):
-//   audit_search_places {q, token}            -> [{place_id, name, address}]
-//   audit_keywords      {place_id, token}     -> {business, keywords: ["..."]}
-//   audit_run           {place_id, keywords, token} -> audit (same shape as MOCK_AUDIT)
+// Sample data by default. With VITE_USE_MOCK=false the app calls these public Frappe API scripts:
+//   audit_search_places {q}                  -> [{place_id, name, address}]
+//   audit_keywords      {place_id}           -> {business, keywords: ["..."]}
+//   audit_run           {place_id, keywords} -> audit (same shape as MOCK_AUDIT)
 const MOCK = import.meta.env.VITE_USE_MOCK !== 'false'
 const wait = (ms) => new Promise((r) => setTimeout(r, ms))
+
 async function call(method, body) {
   let r
   try {
@@ -23,8 +23,9 @@ async function call(method, body) {
   }
   return (await r.json()).message
 }
+
 const MOCK_AUDIT = {
-  business: { name: 'Smile Care Dental Clinic', address: 'Andheri West, Mumbai', category: 'Dentist', rating: 4.3, reviews: 58, city: 'Mumbai' },
+  business: { name: 'Smile Care Dental Clinic', address: 'Andheri West, Mumbai', category: 'Dentist', rating: 4.3, reviews: 58, city: 'Mumbai', lat: 19.1364, lng: 72.8296 },
   keywords: [
     { keyword: 'dentist in andheri west', searches: 2400, competition: 'High', position: 7 },
     { keyword: 'teeth whitening mumbai', searches: 1900, competition: 'Medium', position: 4 },
@@ -41,8 +42,9 @@ const MOCK_AUDIT = {
     { name: 'Andheri Family Dentistry', rating: 3.9, reviews: 31 },
   ],
 }
-export async function searchPlaces(q, token) {
-  if (!MOCK) return call('audit_search_places', { q, token })
+
+export async function searchPlaces(q) {
+  if (!MOCK) return call('audit_search_places', { q })
   await wait(500)
   return [
     { place_id: 'p1', name: 'Smile Care Dental Clinic', address: 'Andheri West, Mumbai' },
@@ -50,13 +52,15 @@ export async function searchPlaces(q, token) {
     { place_id: 'p3', name: 'Smile Care Orthodontics', address: 'Powai, Mumbai' },
   ]
 }
-export async function getKeywords(place_id, token) {
-  if (!MOCK) return call('audit_keywords', { place_id, token })
+
+export async function getKeywords(place_id) {
+  if (!MOCK) return call('audit_keywords', { place_id })
   await wait(600)
   return { business: MOCK_AUDIT.business, keywords: MOCK_AUDIT.keywords.map((k) => k.keyword) }
 }
-export async function runAudit(place_id, keywords, token) {
-  if (!MOCK) return call('audit_run', { place_id, keywords, token })
+
+export async function runAudit(place_id, keywords) {
+  if (!MOCK) return call('audit_run', { place_id, keywords })
   await wait(1400)
   return { ...MOCK_AUDIT, keywords: MOCK_AUDIT.keywords.filter((k) => keywords.includes(k.keyword)) }
 }

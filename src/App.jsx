@@ -74,7 +74,38 @@ function PlaceSearch({ onPick, onFail }) {
 }
 
 // Map for the report: the business pin plus a shaded area showing where positions were checked.
-function BusinessMap({ business }) {
+// function BusinessMap({ business }) {
+//   const ref = useRef(null)
+//   const [ok, setOk] = useState(Boolean(business.lat && business.lng) && mapsAvailable())
+//   useEffect(() => {
+//     if (!ok) return
+//     let dead = false
+//     loadMaps()
+//       .then(async (g) => {
+//         const { Map, Circle } = await g.maps.importLibrary('maps')
+//         const { AdvancedMarkerElement } = await g.maps.importLibrary('marker')
+//         if (dead || !ref.current) return
+//         const pos = { lat: Number(business.lat), lng: Number(business.lng) }
+//         const map = new Map(ref.current, { center: pos, zoom: 14, mapId: 'DEMO_MAP_ID', disableDefaultUI: true, zoomControl: true, gestureHandling: 'cooperative', clickableIcons: false })
+//         const pin = document.createElement('div')
+//         pin.className = 'pin-you'
+//         new AdvancedMarkerElement({ map, position: pos, content: pin, title: business.name })
+//         new Circle({ map, center: pos, radius: 5000, strokeColor: '#e63946', strokeOpacity: 0.5, strokeWeight: 1, fillColor: '#e63946', fillOpacity: 0.06 })
+//       })
+//       .catch(() => { if (!dead) setOk(false) })
+//     return () => { dead = true }
+//   }, [])
+//   if (!ok) return null
+//   return (
+//     <div className="map-wrap no-print">
+//       <div className="map" ref={ref} />
+//       <div className="map-card"><strong>{business.name}</strong><span>{business.address}</span></div>
+//       <div className="map-note">Shaded area: where we checked your Maps position</div>
+//     </div>
+//   )
+// }
+// Map for the report: you (red pin) and the competitors from the table (numbered).
+function BusinessMap({ business, competitors = [] }) {
   const ref = useRef(null)
   const [ok, setOk] = useState(Boolean(business.lat && business.lng) && mapsAvailable())
   useEffect(() => {
@@ -82,15 +113,29 @@ function BusinessMap({ business }) {
     let dead = false
     loadMaps()
       .then(async (g) => {
-        const { Map, Circle } = await g.maps.importLibrary('maps')
+        const { Map } = await g.maps.importLibrary('maps')
+        const { LatLngBounds } = await g.maps.importLibrary('core')
         const { AdvancedMarkerElement } = await g.maps.importLibrary('marker')
         if (dead || !ref.current) return
         const pos = { lat: Number(business.lat), lng: Number(business.lng) }
         const map = new Map(ref.current, { center: pos, zoom: 14, mapId: 'DEMO_MAP_ID', disableDefaultUI: true, zoomControl: true, gestureHandling: 'cooperative', clickableIcons: false })
+        const bounds = new LatLngBounds()
+        bounds.extend(pos)
+        let others = 0
+        competitors.forEach((c) => {
+          if (c.you || c.lat == null || c.lng == null) return
+          const p = { lat: Number(c.lat), lng: Number(c.lng) }
+          const el = document.createElement('div')
+          el.className = 'pin-comp'
+          el.textContent = String(c.n)
+          new AdvancedMarkerElement({ map, position: p, content: el, title: c.name })
+          bounds.extend(p)
+          others += 1
+        })
         const pin = document.createElement('div')
         pin.className = 'pin-you'
-        new AdvancedMarkerElement({ map, position: pos, content: pin, title: business.name })
-        new Circle({ map, center: pos, radius: 5000, strokeColor: '#e63946', strokeOpacity: 0.5, strokeWeight: 1, fillColor: '#e63946', fillOpacity: 0.06 })
+        new AdvancedMarkerElement({ map, position: pos, content: pin, title: business.name, zIndex: 10 })
+        if (others > 0) map.fitBounds(bounds, 56)
       })
       .catch(() => { if (!dead) setOk(false) })
     return () => { dead = true }
@@ -100,11 +145,16 @@ function BusinessMap({ business }) {
     <div className="map-wrap no-print">
       <div className="map" ref={ref} />
       <div className="map-card"><strong>{business.name}</strong><span>{business.address}</span></div>
-      <div className="map-note">Shaded area: where we checked your Maps position</div>
+      <div className="map-note">Red pin: you. Numbers match the competitors table below</div>
     </div>
   )
 }
 
+// Numbers only the competitors (not "you"), so the map pins and the table agree.
+function numberCompetitors(list) {
+  let n = 0
+  return (list || []).map((c) => (c.you ? { ...c, n: null } : { ...c, n: ++n }))
+}
 // The browser names the saved PDF after the page title, so set it just for printing.
 function printReport(businessName) {
   const previous = document.title
@@ -203,6 +253,7 @@ export default function App() {
         const found = audit.keywords.filter((k) => k.position).length
         const total = audit.keywords.reduce((s, k) => s + (k.searches || 0), 0)
         const mapBusiness = { ...audit.business, lat: chosen && chosen.lat, lng: chosen && chosen.lng, address: (chosen && chosen.address) || audit.business.address }
+        const numbered = numberCompetitors(audit.competitors)
         return (
           <section>
             <div className="print-only print-head">
@@ -228,7 +279,7 @@ export default function App() {
                   <button onClick={() => printReport(audit.business.name)}>Download PDF</button>
                 </div>
               </div>
-              <BusinessMap business={mapBusiness} />
+              <BusinessMap business={mapBusiness} competitors={numbered} />
             </div>
 
             <h2>What people search for</h2>
@@ -242,8 +293,10 @@ export default function App() {
             {audit.competitor_radius_km ? <p className="fine">Businesses of the same kind within about {audit.competitor_radius_km} km of you.</p> : null}
             <div className="scroll"><table>
               <thead><tr><th>Competitor</th><th className="n">Rating</th><th className="n">Reviews</th></tr></thead>
-              <tbody>{audit.competitors.map((c) => (
-                <tr key={c.name} className={c.you ? 'you' : ''}><td>{c.name}{c.you && ' (you)'}</td><td className="n">{c.rating ?? '\u2013'}</td><td className="n">{c.reviews}</td></tr>))}</tbody>
+              {/* <tbody>{audit.competitors.map((c) => (
+                <tr key={c.name} className={c.you ? 'you' : ''}><td>{c.name}{c.you && ' (you)'}</td><td className="n">{c.rating ?? '\u2013'}</td><td className="n">{c.reviews}</td></tr>))}</tbody> */}
+              <tbody>{numbered.map((c) => (
+                <tr key={c.name} className={c.you ? 'you' : ''}><td><span className={'num' + (c.you ? ' you-dot' : '')}>{c.n}</span>{c.name}{c.you && ' (you)'}</td><td className="n">{c.rating ?? '\u2013'}</td><td className="n">{c.reviews}</td></tr>))}</tbody>
             </table></div>
             <p className="fine">Search counts are Google estimates. Maps positions are an estimate of where you appear near your location and can vary by user.</p>
 

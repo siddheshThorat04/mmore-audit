@@ -228,3 +228,10 @@ tr.you td:first-child { box-shadow: inset 4px 0 0 var(--red) }
 .rank.mid   { color: #9a6200 }
 .rank.low   { color: #c24e00 }
 .rank.out   { color: #c62431 }
+
+
+
+/* ---------- Competitor pins and numbers ---------- */
+.pin-comp { width: 26px; height: 26px; border-radius: 50%; background: var(--black); color: #fff; font: 700 12px 'Inter', sans-serif; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; box-shadow: 0 4px 10px rgba(16, 16, 18, .35) }
+.num { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: var(--black); color: #fff; font-size: 12px; font-weight: 700; margin-right: 10px }
+.num.you-dot { background: var(--red) }

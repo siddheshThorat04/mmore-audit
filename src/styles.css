@@ -221,10 +221,10 @@ tr.you td:first-child { box-shadow: inset 4px 0 0 var(--red) }
 }
 
 
-/* ---------- Maps position badges ---------- */
-.rank { display: inline-block; min-width: 56px; text-align: center; font-weight: 800; font-size: 15px; letter-spacing: -.01em; padding: 5px 12px; border-radius: 100px }
-.rank.first { color: #1b5e20; background: #d8f0dc }
-.rank.top   { color: #2e7d32; background: #e6f4e8 }
-.rank.mid   { color: #9a6200; background: #fff1d0 }
-.rank.low   { color: #c24e00; background: #ffe5d3 }
-.rank.out   { color: #c62431; background: #fde4e6 }
+/* ---------- Maps position: plain coloured text ---------- */
+.rank { display: inline-block; min-width: 56px; font-weight: 400; font-size: 19px; letter-spacing: -.01em }
+.rank.first { color: #1b5e20 }
+.rank.top   { color: #2e7d32 }
+.rank.mid   { color: #9a6200 }
+.rank.low   { color: #c24e00 }
+.rank.out   { color: #c62431 }

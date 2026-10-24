@@ -239,6 +239,7 @@ export default function App() {
             </table></div>
 
             <h2>Competitors</h2>
+            {audit.competitor_radius_km ? <p className="fine">Businesses of the same kind within about {audit.competitor_radius_km} km of you.</p> : null}
             <div className="scroll"><table>
               <thead><tr><th>Competitor</th><th className="n">Rating</th><th className="n">Reviews</th></tr></thead>
               <tbody>{audit.competitors.map((c) => (

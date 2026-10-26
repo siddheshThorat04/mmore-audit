@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { searchPlaces, getKeywords, runAudit } from './api.js'
 import { loadMaps, mapsAvailable } from './maps.js'
 
-const fmt = (n) => (n == null ? '\u2013' : n.toLocaleString('en-IN'))
+const fmt = (n) => (n == null ? '\u2013' : n.toLocaleString())
 const LOGO = 'https://ik.imagekit.io/p8bskkmqe/image_U0n_Ivvxn.png?updatedAt=1783403369073'
 const G_LOGO = 'https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png'
 const G_LOGO_2X = 'https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png'
@@ -46,7 +46,7 @@ function PlaceSearch({ onPick, onFail }) {
       .then(async (g) => {
         const { PlaceAutocompleteElement } = await g.maps.importLibrary('places')
         if (dead || !host.current) return
-        el = new PlaceAutocompleteElement({ includedRegionCodes: ['in'] })
+        el = new PlaceAutocompleteElement()
         el.style.width = '100%'
         el.style.colorScheme = 'light'
         host.current.replaceChildren(el)

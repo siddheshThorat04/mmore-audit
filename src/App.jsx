@@ -4,6 +4,8 @@ import { loadMaps, mapsAvailable } from './maps.js'
 import pageFaq from './assets/report/page-1-faq.png'
 import pageAbout from './assets/report/page-2-about.png'
 import pageContact from './assets/report/page-3-contact.png'
+import pageOne from "./assets/report/new_page_1.png"
+import pageTwo from "./assets/report/new_page_2.png"
 const fmt = (n) => (n == null ? '\u2013' : n.toLocaleString())
 const LOGO = 'https://ik.imagekit.io/p8bskkmqe/image_U0n_Ivvxn.png?updatedAt=1783403369073'
 const G_LOGO = 'https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png'
@@ -12,9 +14,8 @@ const WA_NUMBER = '918310719532'
 const waLink = (text) => 'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(text)
 // Static pages appended after the 2 generated pages in the PDF (pages 3 to 5)
 const STATIC_PAGES = [
-  { src: pageFaq, alt: 'Frequently asked questions' },
-  { src: pageAbout, alt: 'About mmore.works' },
-  { src: pageContact, alt: 'Contact us' },
+  { src: pageOne, alt: 'Page 1' },
+  { src: pageTwo, alt: 'Page 2' },
 ]
 function WhatsAppIcon({ size = 22 }) {
   return (

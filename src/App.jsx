@@ -1,14 +1,21 @@
 import { useEffect, useRef, useState } from 'react'
 import { searchPlaces, getKeywords, runAudit } from './api.js'
 import { loadMaps, mapsAvailable } from './maps.js'
-
+import pageFaq from './assets/report/page-1-faq.png'
+import pageAbout from './assets/report/page-2-about.png'
+import pageContact from './assets/report/page-3-contact.png'
 const fmt = (n) => (n == null ? '\u2013' : n.toLocaleString())
 const LOGO = 'https://ik.imagekit.io/p8bskkmqe/image_U0n_Ivvxn.png?updatedAt=1783403369073'
 const G_LOGO = 'https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png'
 const G_LOGO_2X = 'https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png'
 const WA_NUMBER = '918310719532'
 const waLink = (text) => 'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(text)
-
+// Static pages appended after the 2 generated pages in the PDF (pages 3 to 5)
+const STATIC_PAGES = [
+  { src: pageFaq, alt: 'Frequently asked questions' },
+  { src: pageAbout, alt: 'About mmore.works' },
+  { src: pageContact, alt: 'Contact us' },
+]
 function WhatsAppIcon({ size = 22 }) {
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" focusable="false">
@@ -306,6 +313,13 @@ export default function App() {
             <div className="cta no-print">
               <p>Want us to help you move up?</p>
               <a className="wa" href={waLink('Hi, I saw my Google audit for ' + audit.business.name + '.')} target="_blank" rel="noreferrer"><WhatsAppIcon /> Message our team on WhatsApp</a>
+            </div>
+            <div className="print-pages" aria-hidden="true">
+              {STATIC_PAGES.map((p) => (
+                <div className="static-page" key={p.src}>
+                  <img src={p.src} alt={p.alt} />
+                </div>
+              ))}
             </div>
           </section>
         )

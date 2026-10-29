@@ -235,3 +235,10 @@ tr.you td:first-child { box-shadow: inset 4px 0 0 var(--red) }
 .pin-comp { width: 26px; height: 26px; border-radius: 50%; background: var(--black); color: #fff; font: 700 12px 'Inter', sans-serif; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; box-shadow: 0 4px 10px rgba(16, 16, 18, .35) }
 .num { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: var(--black); color: #fff; font-size: 12px; font-weight: 700; margin-right: 10px }
 .num.you-dot { background: var(--red) }
+
+/* ---------- PDF: three fixed pages after the report (FAQ, About, Contact) ---------- */
+@media print {
+  .print-appendix { display: block }
+  .print-page { display: flex; align-items: center; justify-content: center; height: 262mm; break-before: page; page-break-before: always; break-inside: avoid }
+  .print-page img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain }
+}

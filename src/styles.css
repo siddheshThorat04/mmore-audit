@@ -254,3 +254,106 @@ tr.you td:first-child { box-shadow: inset 4px 0 0 var(--red) }
   .static-page:last-child { break-after: auto; page-break-after: auto }
   .static-page img { display: block; width: 100%; height: 100%; object-fit: contain }
 }
+
+
+
+/* ======================================================================
+   PDF additions. Paste at the very END of styles.css (after the earlier
+   .print-pages / .static-page block, which stays as it is).
+   ====================================================================== */
+
+/* Static map image: screen hides it, print uses it instead of the live map */
+.map-static { display: none }
+
+@media print {
+  /* ---------- Report hero in the PDF: stats left, map right (like the screen) ---------- */
+  .hero {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    background: #fff; border: 1px solid var(--line); border-radius: 10px;
+    overflow: hidden; margin-top: 0; break-inside: avoid;
+  }
+  .hero-info { padding: 14px 16px }
+  .hero .stats { grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 12px 0 0 }
+  .hero .stat { padding: 8px 10px }
+  .hero .stat label { font-size: 8.5px; margin-bottom: 4px }
+  .hero .stat b { font-size: 16px }
+  .hero .stat span { font-size: 10px }
+
+  .map-wrap { order: 0; display: block; position: relative; min-height: 0; height: 74mm; background: #ece9e6 }
+  .map-wrap .map-card { display: none }
+  .map-wrap .map-note { font-size: 9px; left: 8px; bottom: 8px }
+  /* Static image when it loaded, otherwise the live map */
+  .map-wrap:not(.no-static) .map { display: none }
+  .map-wrap .map-static { display: block; position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover }
+  .map-wrap.no-static .map-static { display: none }
+  .map-wrap .gm-bundled-control, .map-wrap .gm-control-active, .map-wrap .gm-fullscreen-control { display: none !important }
+
+  /* ---------- Static pages: full-bleed A4 images ---------- */
+  /* (the .print-pages / .static-page rules from the earlier step are still used) */
+
+  /* ---------- FAQ pages: normal margins, same look as the report ---------- */
+  .faq-page { break-after: page; page-break-after: always }
+  .faq-page h1 { margin: 0 0 14px }
+  .faq-list { display: grid; gap: 9px }
+  .faq-item {
+    break-inside: avoid; background: #fff; border: 1px solid var(--line);
+    border-left: 4px solid var(--red); border-radius: 8px; padding: 10px 14px;
+  }
+  .faq-item h3 { margin: 0 0 5px; font-size: 13px; font-weight: 700; line-height: 1.35; display: flex; gap: 8px; align-items: flex-start }
+  .faq-item p { margin: 0; font-size: 11.5px; line-height: 1.5; color: var(--text2) }
+  .faq-q {
+    flex: none; width: 18px; height: 18px; border-radius: 50%; background: var(--red); color: #fff;
+    font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; margin-top: 1px;
+  }
+}
+
+/* ======================================================================
+   PDF additions. Paste at the very END of styles.css (after the earlier
+   .print-pages / .static-page block, which stays as it is).
+   ====================================================================== */
+
+/* Static map image: screen hides it, print uses it instead of the live map */
+.map-static { display: none }
+
+@media print {
+  /* ---------- Report hero in the PDF: stats left, map right (like the screen) ---------- */
+  .hero {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    background: #fff; border: 1px solid var(--line); border-radius: 10px;
+    overflow: hidden; margin-top: 0; break-inside: avoid;
+  }
+  .hero-info { padding: 14px 16px }
+  .hero .stats { grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 12px 0 0 }
+  .hero .stat { padding: 8px 10px }
+  .hero .stat label { font-size: 8.5px; margin-bottom: 4px }
+  .hero .stat b { font-size: 16px }
+  .hero .stat span { font-size: 10px }
+
+  .map-wrap { order: 0; display: block; position: relative; min-height: 0; height: 74mm; background: #ece9e6 }
+  .map-wrap .map-card { display: none }
+  .map-wrap .map-note { font-size: 9px; left: 8px; bottom: 8px }
+  /* Static image when it loaded, otherwise the live map */
+  .map-wrap:not(.no-static) .map { display: none }
+  .map-wrap .map-static { display: block; position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover }
+  .map-wrap.no-static .map-static { display: none }
+  .map-wrap .gm-bundled-control, .map-wrap .gm-control-active, .map-wrap .gm-fullscreen-control { display: none !important }
+
+  /* ---------- Static pages: full-bleed A4 images ---------- */
+  /* (the .print-pages / .static-page rules from the earlier step are still used) */
+
+  /* ---------- FAQ pages: normal margins, same look as the report ---------- */
+  .faq-page { break-after: page; page-break-after: always }
+  .faq-page h1 { margin: 0 0 14px }
+  .faq-list { display: grid; gap: 9px }
+  .faq-item {
+    break-inside: avoid; background: #fff; border: 1px solid var(--line);
+    border-left: 4px solid var(--red); border-radius: 8px; padding: 10px 14px;
+  }
+  .faq-item h3 { margin: 0 0 5px; font-size: 13px; font-weight: 700; line-height: 1.35; display: flex; gap: 8px; align-items: flex-start }
+  .faq-item p { margin: 0; font-size: 11.5px; line-height: 1.5; color: var(--text2) }
+  .faq-item a { color: var(--red-dark); font-weight: 700; text-decoration: underline }
+  .faq-q {
+    flex: none; width: 18px; height: 18px; border-radius: 50%; background: var(--red); color: #fff;
+    font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; margin-top: 1px;
+  }
+}

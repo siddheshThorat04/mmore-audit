@@ -426,7 +426,7 @@ tr.total td { background: var(--tint); font-weight: 800; border-top: 2px solid v
   .map-legend { font-size: 9px; padding: 6px 10px; right: 8px; bottom: 8px; gap: 10px }
   .pin-you { animation: none }
 }
-/* ---------- PDF cover page (page 1): hidden on screen; in print an A4 page with the header and a centred cover ---------- */
+/* ---------- PDF cover page (page 1): hidden on screen; in print an A4 page with the header and a centred Google-style cover ---------- */
 .cover-page { display: none }
 
 @media print {
@@ -434,39 +434,21 @@ tr.total td { background: var(--tint); font-weight: 800; border-top: 2px solid v
   /* frame = full printable width (A4 less the page margins), centred; art is drawn at 297 x 189 mm and scaled to fit */
   .cover-frame { position: relative; width: 186mm; height: 118.4mm; margin: 0 auto; overflow: hidden; contain: layout paint; border-radius: 4mm; border: 1px solid #e3e6ec }
   .cover-art {
-    position: absolute; left: 0; top: 0; width: 297mm; height: 189mm; overflow: hidden;
-    zoom: 0.6263;
-    background: linear-gradient(135deg, #ffffff 0%, #f5f8fd 100%);
+    position: absolute; left: 0; top: 0; width: 297mm; height: 189mm; overflow: hidden; zoom: 0.6263;
+    background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 13mm; padding: 0 24mm;
+    font-family: 'Roboto', 'Inter', Arial, sans-serif;
   }
-  .cover-bl { position: absolute; left: -18mm; bottom: -36mm; width: 76mm; height: 76mm; border-radius: 50%; background: #d9e6fc }
-  .cover-ring {
-    position: absolute; left: 216mm; top: -12mm; width: 134mm; height: 134mm; border-radius: 50%;
-    background: conic-gradient(from 195deg, #bfe3cc 0 50deg, #fce9b2 0 100deg, #fbc4c2 0 155deg, #c3d6fa 0 360deg);
-    -webkit-mask: radial-gradient(circle, transparent 0 50%, #000 51%); mask: radial-gradient(circle, transparent 0 50%, #000 51%);
+  .cv-logo { display: block; width: 92mm; height: auto }
+  .cv-search {
+    width: 100%; display: flex; align-items: flex-start; gap: 7mm; padding: 9mm 9mm 11mm;
+    background: #fff; border: 1px solid #dfe1e5; border-radius: 14mm; box-shadow: 0 1px 6px rgba(32, 33, 36, .28);
   }
-  .cover-block { position: absolute; right: 0; top: 45mm; width: 15mm; height: 27mm; background: #c5d8fb }
-  .cover-stripes { position: absolute; right: 6mm; bottom: -22mm; display: flex; gap: 3mm; transform: rotate(40deg); transform-origin: 100% 100% }
-  .cover-stripes i { display: block; width: 8mm; height: 62mm; border-radius: 4mm }
-  .cover-stripes i:nth-child(1) { background: #8ab4f8 }
-  .cover-stripes i:nth-child(2) { background: #f28b82 }
-  .cover-stripes i:nth-child(3) { background: #fdd663 }
-  .cover-stripes i:nth-child(4) { background: #81c995 }
-
-  .cover-top { position: absolute; left: 19mm; right: 13mm; top: 16mm; display: flex; justify-content: space-between; align-items: center }
-  .cover-brand { display: flex; align-items: center; gap: 5mm }
-  .cover-brand img { height: 11mm; width: auto; display: block }
-  .cover-divider { width: 1px; height: 10mm; background: #c9ced6 }
-  .cover-brand-text { font-size: 21px; color: #5f6368 }
-  .cover-pill { font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #5f6368; border: 1px solid #dadce0; background: #f1f3f6; border-radius: 99px; padding: 3mm 6mm }
-
-  .cover-title { position: absolute; left: 19mm; top: 42mm; margin: 0; font-size: 80px; line-height: 1.08; font-weight: 800; letter-spacing: -.025em; color: var(--black) }
-  .cover-sub { position: absolute; left: 19mm; top: 94mm; width: 150mm; margin: 0; font-size: 20px; line-height: 1.55; color: #5f6368 }
-
-  .cover-card { position: absolute; left: 19mm; top: 120mm; width: 258mm; padding: 6mm 8mm; background: rgba(255,255,255,.8); border: 1px solid #d7dbe2; border-radius: 6.5mm }
-  .cover-card label { display: block; font-size: 15px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #5f6368 }
-  .cover-card strong { display: block; margin-top: 1.5mm; font-size: 38px; line-height: 1.15; font-weight: 800; color: var(--black); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
-  .cover-loc { display: flex; align-items: center; gap: 3mm; margin-top: 3mm; font-size: 17px; line-height: 1.35; color: var(--text2) }
-  .cover-loc svg { flex: none }
+  .cv-plus { flex: none; margin-top: 1px }
+  .cv-text { flex: 1; min-width: 0; color: #202124 }
+  .cv-name { font-size: 23px; line-height: 1.4 }
+  .cv-addr { margin-top: 11mm; font-size: 22px; line-height: 1.65 }
+  .cv-ai { flex: none; display: inline-flex; align-items: center; gap: 3mm; background: #f1f3f4; color: #202124; font-size: 19px; font-weight: 600; border-radius: 99px; padding: 3.2mm 6.5mm }
+  .cv-add { display: flex; align-items: center; justify-content: center; width: 20mm; height: 20mm; border-radius: 50%; background: #eef2fb }
 }
 
 /* ---------- Top section: details on the left, business-only map fading in from the right ---------- */
@@ -510,4 +492,10 @@ tr.total td { background: var(--tint); font-weight: 800; border-top: 2px solid v
     right: 0; bottom: 0; height: 30px;
     background: linear-gradient(to right, rgba(255,255,255,0) 0, rgba(255,255,255,0) 84px, rgba(255,255,255,.85) 120px, rgba(255,255,255,.55) 34%, rgba(255,255,255,.25) 48%, rgba(255,255,255,0) 62%);
   }
+}
+
+/* PDF: Revenue opportunity and Local competition each start on a new page */
+@media print {
+  .rev-sec, .map-sec { break-before: page; page-break-before: always }
+  .rev-sec .eyebrow, .map-sec .eyebrow { margin-top: 0 }
 }

@@ -25,10 +25,12 @@ export default function CoverPage({ name, address, logo, date }) {
           </div>
         </div>
 
-        <h1 className="cover-title">
-          Your {'Google'.split('').map((ch, i) => <span key={i} style={{ color: COLORS[i] }}>{ch}</span>)}<br />Growth Audit
-        </h1>
-        <p className="cover-sub">A practical view of local patient demand, Google visibility and the revenue opportunity around your clinic.</p>
+        <div className="cover-mid">
+          <h1 className="cover-title">
+            Your {'Google'.split('').map((ch, i) => <span key={i} style={{ color: COLORS[i] }}>{ch}</span>)}<br />Growth Audit
+          </h1>
+          <p className="cover-sub">A practical view of local patient demand, Google visibility and the revenue opportunity around your clinic.</p>
+        </div>
 
         <div className="cover-card">
           <label>Prepared for</label>

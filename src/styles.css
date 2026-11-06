@@ -426,33 +426,35 @@ tr.total td { background: var(--tint); font-weight: 800; border-top: 2px solid v
   .map-legend { font-size: 9px; padding: 6px 10px; right: 8px; bottom: 8px; gap: 10px }
   .pin-you { animation: none }
 }
-/* ---------- PDF cover page (page 1): hidden on screen; in print an A4 page with the header and a centred cover ---------- */
+/* ---------- PDF cover page (page 1): hidden on screen; in print a large cover centred on the A4 page under the header ---------- */
 .cover-page { display: none }
 
 @media print {
   .cover-page { display: block; break-after: page; page-break-after: always }
-  /* frame = full printable width (A4 less the page margins), centred; art is drawn at 297 x 189 mm and scaled to fit */
-  .cover-frame { position: relative; width: 186mm; height: 118.4mm; margin: 0 auto; overflow: hidden; contain: layout paint; border-radius: 4mm; border: 1px solid #dfe5ef }
-  .cover-art {
-    position: absolute; left: 0; top: 0; width: 297mm; height: 189mm; overflow: hidden; zoom: 0.6263;
-    background: linear-gradient(135deg, #f3f6fb 0%, #f7f9fe 55%, #eef4fd 100%);
+  /* Every size inside the cover is in cqw (1% of the cover's own width), so it scales with the page, with no zoom or transform. */
+  .cover-frame {
+    container-type: inline-size; position: relative; width: 100%; aspect-ratio: 1 / 1.25; margin: 0 auto; overflow: hidden;
+    border-radius: 3cqw; border: 1px solid #dfe5ef;
+    background: linear-gradient(160deg, #f3f6fb 0%, #f7f9fe 55%, #eaf1fd 100%);
   }
-  .cover-bl { position: absolute; left: -18mm; bottom: -36mm; width: 76mm; height: 76mm; border-radius: 50%; background: #dbe7fb }
+  .cover-art { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; padding: 9cqw 9cqw 9cqw; overflow: hidden }
+  .cover-bl { position: absolute; left: -9cqw; bottom: -20cqw; width: 46cqw; height: 46cqw; border-radius: 50%; background: #dbe7fb }
 
-  .cover-top { position: absolute; left: 19mm; right: 13mm; top: 16mm; display: flex; justify-content: space-between; align-items: center }
-  .cover-brand { display: flex; align-items: center; gap: 5mm }
-  .cover-brand img { height: 11mm; width: auto; display: block }
-  .cover-divider { width: 1px; height: 10mm; background: #c9ced6 }
-  .cover-brand-text { font-size: 21px; color: #5f6368 }
+  .cover-top, .cover-mid, .cover-card { position: relative }
+  .cover-top { display: flex; align-items: center }
+  .cover-brand { display: flex; align-items: center; gap: 2.6cqw }
+  .cover-brand img { height: 6.2cqw; width: auto; display: block }
+  .cover-divider { width: 1px; height: 5.6cqw; background: #c9ced6 }
+  .cover-brand-text { font-size: 3.3cqw; color: #5f6368 }
 
-  .cover-title { position: absolute; left: 19mm; top: 42mm; margin: 0; font-size: 80px; line-height: 1.08; font-weight: 800; letter-spacing: -.025em; color: var(--black) }
-  .cover-sub { position: absolute; left: 19mm; top: 94mm; width: 150mm; margin: 0; font-size: 20px; line-height: 1.55; color: #5f6368 }
+  .cover-title { margin: 0; font-size: 12cqw; line-height: 1.07; font-weight: 800; letter-spacing: -.025em; color: var(--black) }
+  .cover-sub { margin: 4.5cqw 0 0; max-width: 70cqw; font-size: 3.5cqw; line-height: 1.55; color: #5f6368 }
 
-  .cover-card { position: absolute; left: 19mm; top: 120mm; width: 258mm; padding: 6mm 8mm; background: rgba(255,255,255,.85); border: 1px solid #d7dbe2; border-radius: 6.5mm }
-  .cover-card label { display: block; font-size: 15px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #5f6368 }
-  .cover-card strong { display: block; margin-top: 1.5mm; font-size: 38px; line-height: 1.15; font-weight: 800; color: var(--black); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
-  .cover-loc { display: flex; align-items: center; gap: 3mm; margin-top: 3mm; font-size: 17px; line-height: 1.35; color: var(--text2) }
-  .cover-loc svg { flex: none }
+  .cover-card { padding: 3.6cqw 4.6cqw 4cqw; background: rgba(255,255,255,.88); border: 1px solid #d7dbe2; border-radius: 3.4cqw }
+  .cover-card label { display: block; font-size: 2.3cqw; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #5f6368 }
+  .cover-card strong { display: block; margin-top: 1cqw; font-size: 4.8cqw; line-height: 1.15; font-weight: 800; color: var(--black) }
+  .cover-loc { display: flex; align-items: flex-start; gap: 1.8cqw; margin-top: 2cqw; font-size: 2.6cqw; line-height: 1.4; color: var(--text2) }
+  .cover-loc svg { flex: none; width: 2.8cqw; height: 2.8cqw; margin-top: .3cqw }
 }
 
 /* ---------- Top section: details on the left, business-only map fading in from the right ---------- */

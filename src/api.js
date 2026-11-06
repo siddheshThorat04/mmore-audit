@@ -1,7 +1,4 @@
-// Sample data by default. With VITE_USE_MOCK=false the app calls these public Frappe API scripts:
-//   audit_search_places {q}                  -> [{place_id, name, address}]
-//   audit_keywords      {place_id}           -> {business, keywords: ["..."]}
-//   audit_run           {place_id, keywords} -> audit (same shape as MOCK_AUDIT)
+
 const MOCK = import.meta.env.VITE_USE_MOCK !== 'false'
 const wait = (ms) => new Promise((r) => setTimeout(r, ms))
 
@@ -64,3 +61,4 @@ export async function runAudit(place_id, keywords) {
   await wait(1400)
   return { ...MOCK_AUDIT, keywords: MOCK_AUDIT.keywords.filter((k) => keywords.includes(k.keyword)) }
 }
+export const IS_MOCK = MOCK

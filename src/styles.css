@@ -576,3 +576,11 @@ tr.total td { background: var(--tint); font-weight: 800; border-top: 2px solid v
   .case p { font-size: 11px; margin-top: 4px }
   .assume span { font-size: 9px }
 }
+
+/* Disclaimer for the revenue page (asterisks on the two headline figures) */
+.rev-disclaimer { margin-top: 16px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 11px; line-height: 1.45; color: var(--muted) }
+.rev-disclaimer p { margin: 0 0 4px }
+@media print {
+  .rev-sec { display: flex; flex-direction: column; min-height: 245mm }
+  .rev-disclaimer { margin-top: auto; font-size: 8px; break-inside: avoid }
+}

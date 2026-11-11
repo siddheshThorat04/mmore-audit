@@ -240,7 +240,8 @@ tr.you td:first-child { box-shadow: inset 4px 0 0 var(--red) }
 .print-pages { display: none }
 
 @media print {
-  .print-pages { display: block }
+  /* the first static page (About Us) must start on a fresh page, not under the CTA bar */
+  .print-pages { display: block; break-before: page; page-break-before: always }
   /* sized from the page width (no fixed A4 box), so it stays centred whatever the browser's print scaling */
   .static-page { display: flex; align-items: center; justify-content: center; width: 100%; height: 250mm; overflow: hidden; break-after: page; page-break-after: always }
   .static-page:last-child { break-after: auto; page-break-after: auto }
@@ -537,17 +538,19 @@ tr.total td { background: var(--tint); font-weight: 800; border-top: 2px solid v
 .stars { --pct: 0%; font-size: 15px; letter-spacing: 1px; line-height: 1; background: linear-gradient(90deg, #e7711b var(--pct), #d5d8dd var(--pct)); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent }
 .pack { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 22px; align-items: start; margin-top: 8px }
 .pack-list { list-style: none; margin: 0; padding: 0; background: #fff; border: 1px solid var(--line); border-radius: 16px; overflow: hidden }
-.pack-item { display: flex; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--line) }
+.pack-item { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #dadce0 }
 .pack-item:last-child { border-bottom: 0 }
 .pack-item.you { background: var(--tint); box-shadow: inset 4px 0 0 var(--red) }
-.pack-item .num { flex: none; margin: 2px 0 0 }
-.pack-body { min-width: 0 }
-.pack-name { font-weight: 700; font-size: 16px; line-height: 1.3; color: var(--black) }
+.pack-body { min-width: 0; flex: 1 }
+.pack-name { font-weight: 500; font-size: 16px; line-height: 1.3; color: #202124 }
 .pack-name em { margin-left: 8px; padding: 2px 8px; border-radius: 100px; background: var(--red); color: #fff; font-style: normal; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; vertical-align: 2px }
-.pack-rate { display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 14px; color: var(--muted) }
-.pack-rate b { color: var(--black); font-weight: 600 }
-.pack-meta { margin-top: 2px; font-size: 13.5px; color: var(--muted) }
-.pack-addr { margin-top: 2px; font-size: 13px; color: var(--muted) }
+.pack-rate { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 5px; margin-top: 3px; font-size: 14px; color: #70757a }
+.pack-rate b { color: #3c4043; font-weight: 400 }
+.pack-addr { margin-top: 2px; font-size: 14px; color: #70757a }
+.pack-actions { display: flex; gap: 14px; flex: none }
+.pack-act { display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #1a0dab; font-size: 12px; font-weight: 500 }
+.pack-act .ic { width: 38px; height: 38px; border-radius: 50%; border: 1px solid #dadce0; display: grid; place-items: center; color: #1a73e8; background: #fff }
+.pack-act .lb { color: #1a73e8; line-height: 1 }
 .pack-map { position: sticky; top: 16px }
 .pack-map .map-wrap { height: 560px; min-height: 0; margin: 0 }
 
@@ -559,17 +562,21 @@ tr.total td { background: var(--tint); font-weight: 800; border-top: 2px solid v
 
 /* PDF: always the phone layout, map on top and the list below */
 @media print {
-  .stars, .num, .pack-name em, .pack-item.you { -webkit-print-color-adjust: exact; print-color-adjust: exact }
+  .stars, .pack-act .ic, .pack-name em, .pack-item.you { -webkit-print-color-adjust: exact; print-color-adjust: exact }
   .pack { display: flex; flex-direction: column; align-items: stretch; gap: 10px; margin-top: 4px }
   .pack-map { order: -1; position: static }
   .pack-map .map-wrap { height: 84mm; margin: 0; border-radius: 10px; box-shadow: none }
   .pack-list { border-radius: 10px }
   .pack-item { gap: 10px; padding: 8px 12px; break-inside: avoid }
+  .pack-actions { gap: 10px }
+  .pack-act { font-size: 8px; gap: 2px }
+  .pack-act .ic { width: 26px; height: 26px }
+  .pack-act .ic svg { width: 14px; height: 14px }
   .pack-name { font-size: 12.5px }
   .pack-name em { font-size: 8px; padding: 1px 6px }
   .pack-rate { font-size: 11px; margin-top: 2px }
   .stars { font-size: 11px }
-  .pack-meta, .pack-addr { font-size: 10px }
+  .pack-addr { font-size: 10px }
   .cases { gap: 8px; margin-top: 8px }
   .case { padding: 10px 14px; border-radius: 10px; break-inside: avoid }
   .case b { font-size: 18px }

@@ -222,12 +222,9 @@ tr.you td:first-child { box-shadow: inset 4px 0 0 var(--red) }
 
 
 /* ---------- Maps position: plain coloured text ---------- */
-.rank { display: inline-block; min-width: 56px; font-weight: 400; font-size: 19px; letter-spacing: -.01em }
-.rank.first { color: #1b5e20 }
-.rank.top   { color: #2e7d32 }
-.rank.mid   { color: #9a6200 }
-.rank.low   { color: #c24e00 }
-.rank.out   { color: #c62431 }
+.rank { display: inline-flex; align-items: center; gap: 9px; min-width: 74px; font-weight: 400; font-size: 17px; letter-spacing: -.01em; color: #3c4043 }
+.rank .status-icon { flex: none }
+.rank-n { min-width: 38px }
 
 
 
@@ -551,6 +548,9 @@ tr.total td { background: var(--tint); font-weight: 800; border-top: 2px solid v
 .pack-act { display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #1a0dab; font-size: 12px; font-weight: 500 }
 .pack-act .ic { width: 38px; height: 38px; border-radius: 50%; border: 1px solid #dadce0; display: grid; place-items: center; color: #1a73e8; background: #fff }
 .pack-act .lb { color: #1a73e8; line-height: 1 }
+.pack-act.missing { cursor: default }
+.pack-act.missing { align-self: center }
+.pack-act.missing .ic { width: 22px; height: 22px; border: none; background: transparent }
 .pack-map { position: sticky; top: 16px }
 .pack-map .map-wrap { height: 560px; min-height: 0; margin: 0 }
 
@@ -572,6 +572,8 @@ tr.total td { background: var(--tint); font-weight: 800; border-top: 2px solid v
   .pack-act { font-size: 8px; gap: 2px }
   .pack-act .ic { width: 26px; height: 26px }
   .pack-act .ic svg { width: 14px; height: 14px }
+  .pack-act.missing .ic { width: 14px; height: 14px }
+  .pack-act.missing .ic svg { width: 14px; height: 14px }
   .pack-name { font-size: 12.5px }
   .pack-name em { font-size: 8px; padding: 1px 6px }
   .pack-rate { font-size: 11px; margin-top: 2px }
@@ -590,4 +592,9 @@ tr.total td { background: var(--tint); font-weight: 800; border-top: 2px solid v
 @media print {
   .rev-sec { display: flex; flex-direction: column; min-height: 245mm }
   .rev-disclaimer { margin-top: auto; font-size: 8px; break-inside: avoid }
+}
+
+@media print {
+  .rank { font-size: 12px; gap: 6px }
+  .rank .status-icon { width: 15px; height: 15px }
 }

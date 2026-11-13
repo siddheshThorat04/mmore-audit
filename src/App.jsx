@@ -3,7 +3,7 @@ import { searchPlaces, getKeywords, runAudit } from './api.js'
 import { loadMaps, mapsAvailable } from './maps.js'
 import FaqPages from './FaqPages.jsx'
 import CoverPage from './CoverPage.jsx'
-import { cityTier, revenueEstimate, MIN_SHARE, MAX_SHARE, MAX_R_MULTIPLE } from './tiers.js'
+import { cityTier, loadTierSheet, revenueEstimate, MIN_SHARE, MAX_SHARE, MAX_R_MULTIPLE } from './tiers.js'
 import pricingPage from './assets/report/Pricing.png'
 import pageTwo from './assets/report/new_page_2.png'
 
@@ -294,6 +294,9 @@ function printReport(businessName) {
 const REVENUE_DISCLAIMER = 'Disclaimer: All figures and projections are indicative estimates based on available data and stated assumptions. Actual results may vary depending on competition, search demand, location, profile quality, customer behaviour, seasonality and other business-specific factors. These estimates are not a guarantee of rankings, enquiries, revenue or business outcomes.'
 
 export default function App() {
+  const [, refreshTiers] = useState(0)
+  // city tiers live in a Google Sheet (see tiers.js): load it once and redraw if the list changed
+  useEffect(() => { loadTierSheet().then((changed) => { if (changed) refreshTiers((n) => n + 1) }) }, [])
   const [step, setStep] = useState('find')
   const [mode, setMode] = useState(mapsAvailable() ? 'widget' : 'manual')
   const [query, setQuery] = useState('')

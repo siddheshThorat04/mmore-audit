@@ -265,35 +265,117 @@ const ALIASES = {
 }
 
 const norm = (s) => String(s || '').toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, ' ').trim()
+// Combined entries ("Durg-Bhilai", "Osmanabad / Dharashiv", "Ch.Sambhajinagar (Aurangabad)") also match by each part.
+const parts = (city) => city.split(/\s*[-/&()]\s*|\s+or\s+/i)
 
-// name -> tier. Combined entries ("Durg-Bhilai", "Osmanabad / Dharashiv", "Ch.Sambhajinagar (Aurangabad)") also match by each part.
-const LOOKUP = (() => {
+// The list as rows: { city, tier (1 to 3), aliases: [other spellings] }. This is the built-in copy;
+// when a Google Sheet is configured (see "Tier sheet" below) the sheet replaces it.
+export const DEFAULT_TIER_ROWS = (() => {
+  const rows = []
+  for (const tier of [1, 2, 3]) for (const city of TIER_CITIES[tier]) rows.push({ city, tier, aliases: [] })
+  for (const [alias, target] of Object.entries(ALIASES)) {
+    const t = norm(target)
+    const row = rows.find((r) => norm(r.city) === t) || rows.find((r) => parts(r.city).some((p) => norm(p) === t))
+    if (row && norm(alias) !== t) row.aliases.push(alias)
+  }
+  return rows
+})()
+
+// name -> tier lookup built from rows
+function buildLookup(rows) {
   const map = new Map()
   const add = (name, tier) => { const k = norm(name); if (k && !map.has(k)) map.set(k, tier) }
-  for (const tier of [1, 2, 3]) {
-    for (const entry of TIER_CITIES[tier]) {
-      add(entry, tier)
-      entry.split(/\s*[-/&()]\s*|\s+or\s+/i).forEach((p) => add(p, tier))
-    }
+  for (const r of rows) { add(r.city, r.tier); parts(r.city).forEach((p) => add(p, r.tier)) }
+  // aliases go in after every real name, so a listed city always wins over an alias
+  for (const r of rows) (r.aliases || []).forEach((a) => add(a, r.tier))
+  return { map, names: [...map.keys()].sort((x, y) => y.length - x.length) }
+}
+let active = buildLookup(DEFAULT_TIER_ROWS)
+
+// ---------------------------------------------------------------------------------------------
+// Tier sheet: staff keep the list in a Google Sheet (columns: City | Tier | Also known as).
+// Publish the sheet to the web as CSV and set VITE_TIERS_SHEET_CSV_URL to that link. Changes show up
+// in the app within a few minutes, with no deploy. Without the variable, or if the sheet can't be
+// read, the app uses the last good copy saved in the browser, then the built-in list above.
+// ---------------------------------------------------------------------------------------------
+const SHEET_URL = import.meta.env.VITE_TIERS_SHEET_CSV_URL
+const CACHE_KEY = 'mmore_tiers_csv_v1'
+const MIN_ROWS = 20 // a sheet with fewer valid cities than this is treated as a mistake and ignored
+export let tierSource = 'built-in' // 'sheet' | 'saved copy' | 'built-in'
+
+export function parseCsv(text) {
+  const rows = []
+  let row = [], cell = '', q = false
+  const t = String(text || '').replace(/^\uFEFF/, '')
+  for (let i = 0; i < t.length; i++) {
+    const c = t[i]
+    if (q) {
+      if (c === '"') { if (t[i + 1] === '"') { cell += '"'; i++ } else q = false } else cell += c
+    } else if (c === '"') q = true
+    else if (c === ',') { row.push(cell); cell = '' }
+    else if (c === '\n' || c === '\r') { if (c === '\r' && t[i + 1] === '\n') i++; row.push(cell); cell = ''; rows.push(row); row = [] }
+    else cell += c
   }
-  // aliases point at a name already in the list
-  for (const [alias, target] of Object.entries(ALIASES)) {
-    const tier = map.get(norm(target))
-    if (tier) add(alias, tier)
+  if (cell !== '' || row.length) { row.push(cell); rows.push(row) }
+  return rows
+}
+
+export function rowsFromCsv(text) {
+  const table = parseCsv(text)
+  const head = (table[0] || []).map((h) => h.trim().toLowerCase())
+  const ci = head.findIndex((h) => h.includes('city'))
+  const ti = head.findIndex((h) => h.includes('tier'))
+  const ai = head.findIndex((h) => h.includes('also') || h.includes('alias'))
+  if (ci < 0 || ti < 0) return []
+  const out = []
+  for (const r of table.slice(1)) {
+    const city = (r[ci] || '').trim()
+    const m = String(r[ti] || '').match(/[1-3]/) // tier 4 is "not in the list", so only 1 to 3 are listed
+    if (!city || !m) continue
+    out.push({ city, tier: Number(m[0]), aliases: ai >= 0 ? String(r[ai] || '').split(/[,;|]/).map((x) => x.trim()).filter(Boolean) : [] })
   }
-  return map
-})()
-const NAMES_LONGEST_FIRST = [...LOOKUP.keys()].sort((a, b) => b.length - a.length)
+  return out
+}
+
+function apply(csv, source) {
+  const rows = rowsFromCsv(csv)
+  if (rows.length < MIN_ROWS) return false
+  active = buildLookup(rows)
+  tierSource = source
+  return true
+}
+
+// last good copy from this browser: instant on the next visit, and works if the sheet is unreachable
+try { if (SHEET_URL && typeof localStorage !== 'undefined') { const saved = localStorage.getItem(CACHE_KEY); if (saved) apply(saved, 'saved copy') } } catch (e) { /* ignore */ }
+
+// Fetch the sheet. Returns true when the list changed, so the caller can refresh the screen.
+export async function loadTierSheet() {
+  if (!SHEET_URL) return false
+  try {
+    const ctrl = new AbortController()
+    const timer = setTimeout(() => ctrl.abort(), 8000)
+    const r = await fetch(SHEET_URL, { signal: ctrl.signal, cache: 'no-store' })
+    clearTimeout(timer)
+    if (!r.ok) throw new Error('HTTP ' + r.status)
+    const text = await r.text()
+    if (!apply(text, 'sheet')) { console.warn('Tier sheet ignored: it needs the columns City and Tier and at least ' + MIN_ROWS + ' cities.'); return false }
+    try { localStorage.setItem(CACHE_KEY, text) } catch (e) { /* ignore */ }
+    return true
+  } catch (e) {
+    console.warn('Could not read the tier sheet, using the ' + tierSource + ' list:', e && e.message)
+    return false
+  }
+}
 
 // Tier (1 to 4) for a business. Tries the city, then the search area, then looks for any listed city in the address.
 export function cityTier(...places) {
   for (const p of places) {
-    const hit = LOOKUP.get(norm(p))
+    const hit = active.map.get(norm(p))
     if (hit) return hit
   }
   const text = ' ' + places.map(norm).join(' , ') + ' '
-  for (const name of NAMES_LONGEST_FIRST) {
-    if (text.includes(' ' + name + ' ')) return LOOKUP.get(name)
+  for (const name of active.names) {
+    if (text.includes(' ' + name + ' ')) return active.map.get(name)
   }
   return 4
 }

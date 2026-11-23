@@ -1,0 +1,633 @@
+From 7e886d6a5dd973fdf4855694cca3ea10ddef13eb Mon Sep 17 00:00:00 2001
+From: claude <a@b>
+Date: Mon, 23 Nov 2026 12:19:24 +0000
+Subject: [PATCH] Brand colour: pick any hex, whole app follows
+
+---
+ scripts/test-theme.mjs |  27 +++++++++
+ src/App.jsx            |  16 ++++--
+ src/ThemePicker.jsx    |  68 +++++++++++++++++++++++
+ src/main.jsx           |   2 +
+ src/styles.css         | 122 ++++++++++++++++++++++++++---------------
+ src/theme.js           | 122 +++++++++++++++++++++++++++++++++++++++++
+ 6 files changed, 309 insertions(+), 48 deletions(-)
+ create mode 100644 scripts/test-theme.mjs
+ create mode 100644 src/ThemePicker.jsx
+ create mode 100644 src/theme.js
+
+diff --git a/scripts/test-theme.mjs b/scripts/test-theme.mjs
+new file mode 100644
+index 0000000..1c8d1c6
+--- /dev/null
++++ b/scripts/test-theme.mjs
+@@ -0,0 +1,27 @@
++import assert from 'node:assert/strict'
++import { normalizeHex, deriveTheme, checkBrand, contrast, PRESETS, DEFAULT_PRIMARY } from '../src/theme.js'
++
++assert.equal(normalizeHex('7C3AED'), '#7c3aed'); assert.equal(normalizeHex('#abc'), '#aabbcc'); assert.equal(normalizeHex(' #FACC15 '), '#facc15')
++for (const bad of ['', 'xyz', '#12', '#12345', '#1234567', null, undefined, '#gggggg']) assert.equal(normalizeHex(bad), null, String(bad))
++assert.equal(checkBrand('#ffffff').ok, false, 'white is refused'); assert.equal(checkBrand('#fffbe6').ok, false, 'cream is refused')
++for (const ok of ['#facc15', '#000000', '#101012']) assert.equal(checkBrand(ok).ok, true, ok)
++
++// default red: exact original shades
++const d = deriveTheme(DEFAULT_PRIMARY)
++assert.equal(d['primary-dark'], '#b80f22'); assert.equal(d['primary-tint'], '#fbdde0'); assert.equal(d['on-primary'], '#ffffff'); assert.equal(d['primary-ink'], '#e0142a')
++assert.notEqual(deriveTheme('#e0142b')['primary-text'], undefined)
++
++// every preset and a spread of random colours must give readable text
++const tests = [...PRESETS.map((p) => p.hex), '#000000', '#101012', '#808080', '#00ff00', '#ffff00', '#00ffff', '#ff00ff', '#0000ff', '#ff0000']
++let worst = 99
++for (const hex of tests) {
++  const t = deriveTheme(hex)
++  const checks = [
++    ['text on tint', contrast(t['primary-text'], t['primary-tint'])],
++    ['ink on white', contrast(t['primary-ink'], '#ffffff')],
++    ['label on brand button', contrast(t['on-primary'], t.primary)],
++  ]
++  for (const [name, v] of checks) { worst = Math.min(worst, v); assert(v >= 3.9, hex + ' ' + name + ' ' + v.toFixed(2)) }
++  for (const k of Object.keys(t)) assert(k === 'primary-rgb' || /^#[0-9a-f]{6}$/.test(t[k]), hex + ' ' + k + ' ' + t[k])
++}
++console.log('Theme checks passed for ' + tests.length + ' colours. Lowest contrast seen: ' + worst.toFixed(2))
+diff --git a/src/App.jsx b/src/App.jsx
+index ed155cc..571c950 100644
+--- a/src/App.jsx
++++ b/src/App.jsx
+@@ -3,6 +3,8 @@ import { searchPlaces, getKeywords, runAudit } from './api.js'
+ import { loadMaps, mapsAvailable } from './maps.js'
+ import FaqPages from './FaqPages.jsx'
+ import CoverPage from './CoverPage.jsx'
++import ThemePicker from './ThemePicker.jsx'
++import { getPrimary } from './theme.js'
+ import { cityTier, loadTierSheet, revenueEstimate, MIN_SHARE, MAX_SHARE, MAX_R_MULTIPLE } from './tiers.js'
+ import pricingPage from './assets/report/Pricing.png'
+ import pageTwo from './assets/report/new_page_2.png'
+@@ -85,7 +87,7 @@ function PlaceSearch({ onPick, onFail }) {
+   return <div className="combo">{!ready && <span className="miss">Loading search...</span>}<div ref={host} /></div>
+ }
+ 
+-// Map for the report: you (red pin) and the competitors from the table (numbered).
++// Map for the report: you (brand-colour pin) and the competitors from the table (numbered).
+ // On screen it is the interactive Google map. In the PDF it is a Static Maps image of the
+ // same pins (the interactive map does not print reliably). It needs "Maps Static API"
+ // enabled for the same browser key; if that image fails, the PDF falls back to the live map.
+@@ -94,7 +96,7 @@ function staticMapUrl(business, competitors) {
+   if (!MAPS_KEY) return ''
+   const q = [
+     'size=640x500', 'scale=2', 'maptype=roadmap', 'key=' + encodeURIComponent(MAPS_KEY),
+-    'markers=' + encodeURIComponent('color:0xe0142a|size:mid|' + business.lat + ',' + business.lng),
++    'markers=' + encodeURIComponent('color:0x' + getPrimary().slice(1) + '|size:mid|' + business.lat + ',' + business.lng),
+   ]
+   let others = 0
+   competitors.forEach((c) => {
+@@ -297,6 +299,9 @@ export default function App() {
+   const [, refreshTiers] = useState(0)
+   // city tiers live in a Google Sheet (see tiers.js): load it once and redraw if the list changed
+   useEffect(() => { loadTierSheet().then((changed) => { if (changed) refreshTiers((n) => n + 1) }) }, [])
++  // redraw when the brand colour changes (the PDF map image is built from it)
++  const [, setBrand] = useState(0)
++  useEffect(() => { const f = () => setBrand((n) => n + 1); window.addEventListener('brandchange', f); return () => window.removeEventListener('brandchange', f) }, [])
+   const [step, setStep] = useState('find')
+   const [mode, setMode] = useState(mapsAvailable() ? 'widget' : 'manual')
+   const [query, setQuery] = useState('')
+@@ -346,7 +351,10 @@ export default function App() {
+           <img src={LOGO} alt="mmore.works" className="logo-img" />
+           <div><div className="wordmark">mmore.works</div><div className="sub">Free Google audit</div></div>
+         </div>
+-        <span className="pill">{step === 'find' ? 'Step 1 of 3' : step === 'keywords' ? 'Step 2 of 3' : 'Your report'}</span>
++        <div className="top-right">
++          <ThemePicker />
++          <span className="pill">{step === 'find' ? 'Step 1 of 3' : step === 'keywords' ? 'Step 2 of 3' : 'Your report'}</span>
++        </div>
+       </header>
+       {error && <p className="error" role="alert">{error}</p>}
+ 
+@@ -381,7 +389,7 @@ export default function App() {
+       {step === 'keywords' && (
+         <section>
+           <h1>What do your customers search for?</h1>
+-          <p className="lead"><strong>{chosen.name}</strong>, {chosen.address}. Keep the searches that matter to you (red), or add your own.</p>
++          <p className="lead"><strong>{chosen.name}</strong>, {chosen.address}. Keep the searches that matter to you (highlighted), or add your own.</p>
+           <div className="chips">{keywords.map((k) => (
+             <label key={k} className={'chip' + (picked.includes(k) ? ' on' : '')}>
+               <input type="checkbox" checked={picked.includes(k)} onChange={() => setPicked(picked.includes(k) ? picked.filter((x) => x !== k) : [...picked, k])} />{k}</label>))}</div>
+diff --git a/src/ThemePicker.jsx b/src/ThemePicker.jsx
+new file mode 100644
+index 0000000..f21a7d1
+--- /dev/null
++++ b/src/ThemePicker.jsx
+@@ -0,0 +1,68 @@
++import { useEffect, useRef, useState } from 'react'
++import { PRESETS, DEFAULT_PRIMARY, applyTheme, checkBrand, getPrimary } from './theme.js'
++
++// Header control: a swatch button that opens a small panel with preset colours,
++// a colour wheel and a hex code box. Every change is applied to the whole app straight away.
++export default function ThemePicker() {
++  const [open, setOpen] = useState(false)
++  const [primary, setPrimary] = useState(getPrimary())
++  const [text, setText] = useState(getPrimary())
++  const [problem, setProblem] = useState('')
++  const box = useRef(null)
++
++  // stay in step if the colour is changed elsewhere (URL parameter, another picker)
++  useEffect(() => {
++    const on = (e) => { setPrimary(e.detail); setText(e.detail); setProblem('') }
++    window.addEventListener('brandchange', on)
++    return () => window.removeEventListener('brandchange', on)
++  }, [])
++
++  // close on outside click or Escape
++  useEffect(() => {
++    if (!open) return
++    const click = (e) => { if (box.current && !box.current.contains(e.target)) setOpen(false) }
++    const key = (e) => { if (e.key === 'Escape') setOpen(false) }
++    document.addEventListener('mousedown', click)
++    document.addEventListener('keydown', key)
++    return () => { document.removeEventListener('mousedown', click); document.removeEventListener('keydown', key) }
++  }, [open])
++
++  const type = (value) => {
++    setText(value)
++    const r = checkBrand(value)
++    if (r.ok) { setProblem(''); applyTheme(r.hex); return }
++    const digits = value.trim().replace(/^#/, '')
++    if (!/^[0-9a-f]*$/i.test(digits)) setProblem(r.reason)  // not a hex code
++    else setProblem(r.hex ? r.reason : '')                   // complete but too pale, or still being typed
++  }
++  // leaving the box with half a code puts the last good colour back
++  const leave = () => { if (!checkBrand(text).ok) { setText(primary); setProblem('') } }
++  const pick = (hex) => { setProblem(''); applyTheme(hex) }
++
++  return (
++    <div className="tp no-print" ref={box}>
++      <button type="button" className="tp-btn" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(!open)}>
++        <i className="tp-dot" style={{ background: primary }} aria-hidden="true" />
++        <span>Colour</span>
++      </button>
++      {open && (
++        <div className="tp-panel" role="dialog" aria-label="Choose brand colour">
++          <div className="tp-title">Brand colour</div>
++          <div className="tp-swatches">
++            {PRESETS.map((c) => (
++              <button type="button" key={c.hex} className={'tp-sw' + (primary === c.hex ? ' on' : '')} style={{ background: c.hex }}
++                title={c.name} aria-label={c.name} aria-pressed={primary === c.hex} onClick={() => pick(c.hex)} />
++            ))}
++          </div>
++          <div className="tp-row">
++            <input type="color" className="tp-wheel" aria-label="Pick a colour" value={primary} onChange={(e) => pick(e.target.value)} />
++            <input className="tp-hex" aria-label="Hex colour code" aria-invalid={Boolean(problem)} placeholder="#7c3aed" maxLength={7}
++              spellCheck="false" autoComplete="off" value={text} onChange={(e) => type(e.target.value)} onBlur={leave} />
++          </div>
++          {problem && <p className="tp-err" role="alert">{problem}</p>}
++          <button type="button" className="tp-reset" disabled={primary === DEFAULT_PRIMARY} onClick={() => pick(DEFAULT_PRIMARY)}>Reset to mmore.works red</button>
++        </div>
++      )}
++    </div>
++  )
++}
+diff --git a/src/main.jsx b/src/main.jsx
+index e33e15b..8b4240e 100644
+--- a/src/main.jsx
++++ b/src/main.jsx
+@@ -1,5 +1,7 @@
+ import React from 'react'
+ import { createRoot } from 'react-dom/client'
+ import App from './App.jsx'
++import { initTheme } from './theme.js'
+ import './styles.css'
++initTheme() // apply the saved / ?brand= colour before the first paint
+ createRoot(document.getElementById('root')).render(<App />)
+diff --git a/src/styles.css b/src/styles.css
+index f7f43f4..26793f6 100644
+--- a/src/styles.css
++++ b/src/styles.css
+@@ -1,12 +1,19 @@
+ :root {
+   --black: #101012;
+-  --red: #e0142a;
+-  --red-dark: #b80f22;
+-  --tint: #fdf1f1;
++  /* Brand colour. theme.js overwrites these from one hex code; the values here are the defaults (mmore.works red). */
++  --primary: #e0142a; --primary-dark: #b80f22; --primary-tint: #fbdde0; --primary-soft: #fdf1f1;
++  --primary-line: #eee0e0; --primary-edge: #f6c9c9; --primary-bright: #ff8a96;
++  --primary-text: #b80f22;  /* brand-coloured text on tinted backgrounds */
++  --primary-ink: #e0142a;   /* brand-coloured text on white */
++  --on-primary: #ffffff;    /* text on a brand-coloured button */
++  --primary-rgb: 224, 20, 42;
++  /* Errors and low-position pins stay red whatever the brand colour is. */
++  --error: #b80f22; --error-bg: #fdeceb; --error-line: #f6c9c9;
++  --tint: var(--primary-soft);
+   --off-white: #f6f5f4;
+   --muted: #8b8b93;
+   --text2: #3a3a3f;
+-  --border: #eee0e0;
++  --border: var(--primary-line);
+   --line: #e5e3e1;
+   --good: #2e7d32;
+   --mid: #d98a00;
+@@ -57,23 +64,23 @@ input[type=text], input:not([type]) {
+   flex: 1 1 220px; padding: 14px 16px; font: inherit;
+   border: 1.5px solid var(--line); border-radius: 10px; background: #fff; color: var(--black);
+ }
+-input:focus { outline: none; border-color: var(--red) }
++input:focus { outline: none; border-color: var(--primary) }
+ 
+ button, .cta a {
+   font: 600 15px 'Inter', sans-serif; padding: 14px 22px; border: 0; border-radius: 10px;
+-  background: var(--red); color: #fff; cursor: pointer; text-decoration: none; display: inline-block;
+-  box-shadow: 0 8px 20px -8px rgba(230, 57, 70, .55); transition: background .15s;
++  background: var(--primary); color: var(--on-primary); cursor: pointer; text-decoration: none; display: inline-block;
++  box-shadow: 0 8px 20px -8px rgba(var(--primary-rgb), .55); transition: background .15s;
+ }
+-button:hover:not(:disabled), .cta a:hover { background: var(--red-dark) }
++button:hover:not(:disabled), .cta a:hover { background: var(--primary-dark) }
+ button:disabled { opacity: .55; cursor: not-allowed; box-shadow: none }
+ button.ghost { background: #fff; color: var(--text2); border: 1.5px solid var(--line); box-shadow: none }
+-button.ghost:hover:not(:disabled) { background: var(--tint); color: var(--red-dark); border-color: #f6c9c9 }
+-:focus-visible { outline: 3px solid rgba(230, 57, 70, .45); outline-offset: 2px }
++button.ghost:hover:not(:disabled) { background: var(--tint); color: var(--primary-text); border-color: var(--primary-edge) }
++:focus-visible { outline: 3px solid rgba(var(--primary-rgb), .45); outline-offset: 2px }
+ 
+ /* ---------- Business results ---------- */
+ .list { list-style: none; padding: 0; margin: 16px 0; display: grid; gap: 10px }
+ .list li { background: #fff; border: 1px solid var(--line); border-radius: 12px; transition: border-color .15s, box-shadow .15s }
+-.list li:hover { border-color: var(--red); box-shadow: 0 10px 24px -16px rgba(230, 57, 70, .5) }
++.list li:hover { border-color: var(--primary); box-shadow: 0 10px 24px -16px rgba(var(--primary-rgb), .5) }
+ button.plain {
+   width: 100%; text-align: left; background: none; color: var(--black); padding: 16px 18px;
+   box-shadow: none; display: flex; flex-direction: column; border-radius: 12px;
+@@ -88,9 +95,9 @@ button.plain span { color: var(--muted); font-weight: 400; font-size: 14px }
+   border: 1.5px solid var(--line); background: #fff; border-radius: 100px;
+   padding: 9px 16px; cursor: pointer; font-size: 14.5px; font-weight: 500; transition: all .15s;
+ }
+-.chip.on { background: var(--red); border-color: var(--red); color: #fff }
++.chip.on { background: var(--primary); border-color: var(--primary); color: var(--on-primary) }
+ .chip input { position: absolute; opacity: 0; pointer-events: none }
+-.chip:has(input:focus-visible) { outline: 3px solid rgba(230, 57, 70, .45); outline-offset: 2px }
++.chip:has(input:focus-visible) { outline: 3px solid rgba(var(--primary-rgb), .45); outline-offset: 2px }
+ 
+ /* ---------- Report ---------- */
+ .actions { display: flex; gap: 10px; flex-wrap: wrap; margin: 6px 0 4px }
+@@ -108,14 +115,14 @@ th { background: var(--tint); color: var(--text2); font-weight: 600; font-size:
+ tr:last-child td { border-bottom: 0 }
+ .n { text-align: right }
+ tr.you td { background: var(--tint); font-weight: 700 }
+-tr.you td:first-child { box-shadow: inset 4px 0 0 var(--red) }
++tr.you td:first-child { box-shadow: inset 4px 0 0 var(--primary) }
+ 
+ /* Maps position strip */
+ .track { display: inline-flex; align-items: center; gap: 3px }
+ .track i { width: 10px; height: 20px; background: var(--line); border-radius: 3px; display: block }
+ .track i.pin { background: var(--good); height: 26px }
+ .track i.pin.mid { background: var(--mid) }
+-.track i.pin.low { background: var(--red-dark) }
++.track i.pin.low { background: var(--error) }
+ .track b { margin-left: 8px; font-size: 14px }
+ .miss { color: var(--muted); font-size: 14px }
+ 
+@@ -127,7 +134,7 @@ tr.you td:first-child { box-shadow: inset 4px 0 0 var(--red) }
+ }
+ .cta p { margin: 0; font-weight: 700; font-size: 18px; letter-spacing: -.01em }
+ 
+-.error { background: #fdeceb; color: var(--red-dark); border: 1px solid #f6c9c9; padding: 12px 16px; border-radius: 10px; margin-top: 16px }
++.error { background: var(--error-bg); color: var(--error); border: 1px solid var(--error-line); padding: 12px 16px; border-radius: 10px; margin-top: 16px }
+ 
+ .foot { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12.5px; text-align: center }
+ 
+@@ -148,7 +155,7 @@ tr.you td:first-child { box-shadow: inset 4px 0 0 var(--red) }
+   .no-print, .top, .foot { display: none !important }
+   main { max-width: none; padding: 0 }
+ 
+-  .print-head { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; margin-bottom: 18px; border-bottom: 3px solid var(--red) }
++  .print-head { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; margin-bottom: 18px; border-bottom: 3px solid var(--primary) }
+   .print-head .brand { display: flex; align-items: center; gap: 10px }
+   .print-head img { height: 40px; width: auto }
+   .print-head strong { display: block; font-size: 16px }
+@@ -156,7 +163,7 @@ tr.you td:first-child { box-shadow: inset 4px 0 0 var(--red) }
+   .print-head .meta { font-size: 11px; color: var(--muted) }
+ 
+   h1 { font-size: 24px; margin: 0 0 6px; max-width: none }
+-  h2 { font-size: 14px; margin: 22px 0 8px; padding-left: 8px; border-left: 4px solid var(--red) }
++  h2 { font-size: 14px; margin: 22px 0 8px; padding-left: 8px; border-left: 4px solid var(--primary) }
+   .lead { font-size: 12.5px }
+   .stats { margin: 14px 0 0; gap: 8px }
+   .stat { padding: 10px 12px; border-radius: 8px }
+@@ -176,10 +183,10 @@ tr.you td:first-child { box-shadow: inset 4px 0 0 var(--red) }
+ .search-card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 12px; margin-top: 20px; box-shadow: 0 20px 40px -28px rgba(16, 16, 18, .35) }
+ .combo { position: relative; width: 100% }
+ .combo gmp-place-autocomplete { width: 100%; color-scheme: light }
+-.linklike { background: none; box-shadow: none; color: var(--red-dark); padding: 10px 2px; font-weight: 600; font-size: 14px; text-decoration: underline }
+-.linklike:hover:not(:disabled) { background: none; color: var(--red) }
++.linklike { background: none; box-shadow: none; color: var(--primary-text); padding: 10px 2px; font-weight: 600; font-size: 14px; text-decoration: underline }
++.linklike:hover:not(:disabled) { background: none; color: var(--primary-ink) }
+ 
+-/* Selected searches are red, unselected are white */
++/* Selected searches use the brand colour, unselected are white */
+ .chip.on::before { content: '\2713'; margin-right: 6px }
+ 
+ /* ---------- Report hero: stats on the left, map on the right ---------- */
+@@ -194,7 +201,7 @@ tr.you td:first-child { box-shadow: inset 4px 0 0 var(--red) }
+ .map-card { position: absolute; top: 16px; right: 16px; max-width: calc(100% - 32px); background: #fff; border-radius: 14px; padding: 10px 16px; box-shadow: 0 10px 28px -10px rgba(16, 16, 18, .4); display: flex; flex-direction: column }
+ .map-card span { color: var(--muted); font-size: 12.5px; max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+ .map-note { position: absolute; left: 12px; bottom: 12px; background: rgba(255, 255, 255, .92); border-radius: 100px; padding: 4px 10px; font-size: 11.5px; color: var(--text2) }
+-.pin-you { width: 30px; height: 30px; background: var(--red); border: 3px solid #fff; border-radius: 50% 50% 50% 0; transform: translateY(-6px) rotate(-45deg); box-shadow: 0 6px 14px rgba(16, 16, 18, .35); position: relative }
++.pin-you { width: 30px; height: 30px; background: var(--primary); border: 3px solid #fff; border-radius: 50% 50% 50% 0; transform: translateY(-6px) rotate(-45deg); box-shadow: 0 6px 14px rgba(16, 16, 18, .35); position: relative }
+ .pin-you::after { content: ''; position: absolute; inset: 0; margin: auto; width: 8px; height: 8px; border-radius: 50%; background: #fff }
+ 
+ /* ---------- WhatsApp ---------- */
+@@ -231,7 +238,7 @@ tr.you td:first-child { box-shadow: inset 4px 0 0 var(--red) }
+ /* ---------- Competitor pins and numbers ---------- */
+ .pin-comp { width: 26px; height: 26px; border-radius: 50%; background: var(--black); color: #fff; font: 700 12px 'Inter', sans-serif; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; box-shadow: 0 4px 10px rgba(16, 16, 18, .35) }
+ .num { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: var(--black); color: #fff; font-size: 12px; font-weight: 700; margin-right: 10px }
+-.num.you-dot { background: var(--red) }
++.num.you-dot { background: var(--primary) }
+ 
+ /* ---------- Static PDF pages (about, pricing, contact): hidden on screen; in print each image is centred on its own page ---------- */
+ .print-pages { display: none }
+@@ -285,12 +292,12 @@ tr.you td:first-child { box-shadow: inset 4px 0 0 var(--red) }
+   .faq-list { display: grid; gap: 9px }
+   .faq-item {
+     break-inside: avoid; background: #fff; border: 1px solid var(--line);
+-    border-left: 4px solid var(--red); border-radius: 8px; padding: 10px 14px;
++    border-left: 4px solid var(--primary); border-radius: 8px; padding: 10px 14px;
+   }
+   .faq-item h3 { margin: 0 0 5px; font-size: 13px; font-weight: 700; line-height: 1.35; display: flex; gap: 8px; align-items: flex-start }
+   .faq-item p { margin: 0; font-size: 11.5px; line-height: 1.5; color: var(--text2) }
+   .faq-q {
+-    flex: none; width: 18px; height: 18px; border-radius: 50%; background: var(--red); color: #fff;
++    flex: none; width: 18px; height: 18px; border-radius: 50%; background: var(--primary); color: var(--on-primary);
+     font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; margin-top: 1px;
+   }
+ }
+@@ -335,27 +342,27 @@ tr.you td:first-child { box-shadow: inset 4px 0 0 var(--red) }
+   .faq-list { display: grid; gap: 9px }
+   .faq-item {
+     break-inside: avoid; background: #fff; border: 1px solid var(--line);
+-    border-left: 4px solid var(--red); border-radius: 8px; padding: 10px 14px;
++    border-left: 4px solid var(--primary); border-radius: 8px; padding: 10px 14px;
+   }
+   .faq-item h3 { margin: 0 0 5px; font-size: 13px; font-weight: 700; line-height: 1.35; display: flex; gap: 8px; align-items: flex-start }
+   .faq-item p { margin: 0; font-size: 11.5px; line-height: 1.5; color: var(--text2) }
+-  .faq-item a { color: var(--red-dark); font-weight: 700; text-decoration: underline }
++  .faq-item a { color: var(--primary-text); font-weight: 700; text-decoration: underline }
+   .faq-q {
+-    flex: none; width: 18px; height: 18px; border-radius: 50%; background: var(--red); color: #fff;
++    flex: none; width: 18px; height: 18px; border-radius: 50%; background: var(--primary); color: var(--on-primary);
+     font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; margin-top: 1px;
+   }
+ }
+ 
+ /* ======================================================================
+-   Report redesign: revenue, neighbourhood map, plan. Keeps the red / black scheme.
++   Report redesign: revenue, neighbourhood map, plan. Keeps the brand colour / black scheme.
+    ====================================================================== */
+ .hero { grid-template-columns: 1fr }
+-.eyebrow { font: 700 11.5px 'Inter', sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--red); margin: 44px 0 6px }
++.eyebrow { font: 700 11.5px 'Inter', sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--primary-ink); margin: 44px 0 6px }
+ .sec-title { font-weight: 800; font-size: clamp(24px, 3.4vw, 32px); letter-spacing: -.02em; line-height: 1.15; margin: 0 0 10px }
+ 
+ /* demand bars inside the search table */
+ .bar { height: 6px; background: var(--tint); border-radius: 100px; margin-top: 6px; min-width: 90px; overflow: hidden }
+-.bar i { display: block; height: 100%; background: var(--red); border-radius: 100px }
++.bar i { display: block; height: 100%; background: var(--primary); border-radius: 100px }
+ 
+ /* revenue */
+ .rev-hero { background: var(--black); color: #fff; border-radius: 20px; padding: 26px 28px; display: flex; justify-content: space-between; align-items: flex-end; gap: 18px; flex-wrap: wrap; margin: 18px 0 12px }
+@@ -363,11 +370,11 @@ tr.you td:first-child { box-shadow: inset 4px 0 0 var(--red) }
+ .rev-hero b { font-weight: 800; font-size: clamp(26px, 4.6vw, 40px); letter-spacing: -.02em; line-height: 1.1 }
+ .rev-hero span { margin-left: 10px; color: #c9c9cf; font-size: 14px }
+ .rev-hero .right { text-align: right }
+-.rev-hero .right b { font-size: clamp(20px, 3vw, 28px); color: #ff8a96 }
++.rev-hero .right b { font-size: clamp(20px, 3vw, 28px); color: var(--primary-bright) }
+ .assume { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 16px 20px; margin-bottom: 18px }
+ .assume label { display: block; font-size: 10.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px }
+ .assume b { font-size: 15px; font-weight: 700 }
+-td.money { color: var(--red-dark); font-weight: 700 }
++td.money { color: var(--primary-text); font-weight: 700 }
+ tr.total td { background: var(--tint); font-weight: 800; border-top: 2px solid var(--border) }
+ 
+ /* neighbourhood map */
+@@ -376,18 +383,18 @@ tr.total td { background: var(--tint); font-weight: 800; border-top: 2px solid v
+ .map-legend { position: absolute; right: 16px; bottom: 16px; background: #fff; border-radius: 14px; padding: 12px 16px; display: flex; gap: 18px; font-size: 13px; font-weight: 600; box-shadow: 0 12px 28px -12px rgba(16, 16, 18, .45) }
+ .map-legend span { display: inline-flex; align-items: center; gap: 8px }
+ .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block }
+-.dot.you { background: var(--red) }
++.dot.you { background: var(--primary) }
+ .dot.comp { background: var(--black) }
+-.pin-you { width: 34px; height: 34px; border-radius: 50%; border: 4px solid #fff; background: var(--red); transform: translateY(50%); animation: pinpulse 2.2s infinite; box-shadow: 0 6px 14px rgba(16, 16, 18, .35) }
++.pin-you { width: 34px; height: 34px; border-radius: 50%; border: 4px solid #fff; background: var(--primary); transform: translateY(50%); animation: pinpulse 2.2s infinite; box-shadow: 0 6px 14px rgba(16, 16, 18, .35) }
+ .pin-you::after { width: 10px; height: 10px }
+-@keyframes pinpulse { 0% { box-shadow: 0 0 0 0 rgba(224, 20, 42, .45) } 70% { box-shadow: 0 0 0 16px rgba(224, 20, 42, 0) } 100% { box-shadow: 0 0 0 0 rgba(224, 20, 42, 0) } }
++@keyframes pinpulse { 0% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), .45) } 70% { box-shadow: 0 0 0 16px rgba(var(--primary-rgb), 0) } 100% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0) } }
+ .insight { margin-top: 14px; background: var(--tint); border: 1px solid var(--border); border-radius: 16px; padding: 16px 20px; font-size: 14.5px; color: var(--text2) }
+ 
+ /* first 30 days */
+ .plan .eyebrow { margin-top: 40px }
+ .plan-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px }
+ .plan-grid > div { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 18px }
+-.plan-grid .tag { display: inline-block; background: var(--tint); color: var(--red-dark); font-weight: 700; font-size: 12px; padding: 6px 14px; border-radius: 100px }
++.plan-grid .tag { display: inline-block; background: var(--tint); color: var(--primary-text); font-weight: 700; font-size: 12px; padding: 6px 14px; border-radius: 100px }
+ .plan-grid h3 { font-size: 16px; margin: 12px 0 6px }
+ .plan-grid p { margin: 0; font-size: 13.5px; color: var(--text2) }
+ 
+@@ -508,8 +515,8 @@ tr.total td { background: var(--tint); font-weight: 800; border-top: 2px solid v
+   transform: translateX(-50%) rotate(45deg); border-bottom-right-radius: 3px;
+ }
+ .bpin .n { flex: none; width: 21px; height: 21px; border-radius: 50%; background: #fff; color: var(--black); display: grid; place-items: center; font-size: 11.5px; font-weight: 800 }
+-.bpin.you { background: var(--red); font-size: 14px; padding: 6px 15px 6px 6px; box-shadow: 0 0 0 5px rgba(224, 20, 42, .22), 0 8px 20px -4px rgba(224, 20, 42, .6) }
+-.bpin.you .n { width: 25px; height: 25px; color: var(--red); font-size: 14px }
++.bpin.you { background: var(--primary); font-size: 14px; padding: 6px 15px 6px 6px; box-shadow: 0 0 0 5px rgba(var(--primary-rgb), .22), 0 8px 20px -4px rgba(var(--primary-rgb), .6) }
++.bpin.you .n { width: 25px; height: 25px; color: var(--primary-ink); font-size: 14px }
+ 
+ @media print {
+   .bpin { font-size: 10px; gap: 5px; padding: 3px 9px 3px 3px; border-width: 1.5px }
+@@ -523,10 +530,10 @@ tr.total td { background: var(--tint); font-weight: 800; border-top: 2px solid v
+ .assume span { display: block; margin-top: 2px; font-size: 12px; color: var(--muted) }
+ .cases { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px }
+ .case { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px }
+-.case.best { background: var(--tint); border-color: #f6c9c9 }
++.case.best { background: var(--tint); border-color: var(--primary-edge) }
+ .case label { display: block; margin-bottom: 6px; font-size: 11.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted) }
+ .case b { font-size: 26px; font-weight: 800; letter-spacing: -.02em }
+-.case.best b { color: var(--red-dark) }
++.case.best b { color: var(--primary-text) }
+ .case small { font-size: 13px; font-weight: 500; letter-spacing: 0; color: var(--muted) }
+ .case p { margin: 8px 0 0; font-size: 13.5px; color: var(--text2) }
+ @media (max-width: 640px) { .cases { grid-template-columns: 1fr } }
+@@ -537,10 +544,10 @@ tr.total td { background: var(--tint); font-weight: 800; border-top: 2px solid v
+ .pack-list { list-style: none; margin: 0; padding: 0; background: #fff; border: 1px solid var(--line); border-radius: 16px; overflow: hidden }
+ .pack-item { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #dadce0 }
+ .pack-item:last-child { border-bottom: 0 }
+-.pack-item.you { background: var(--tint); box-shadow: inset 4px 0 0 var(--red) }
++.pack-item.you { background: var(--tint); box-shadow: inset 4px 0 0 var(--primary) }
+ .pack-body { min-width: 0; flex: 1 }
+ .pack-name { font-weight: 500; font-size: 16px; line-height: 1.3; color: #202124 }
+-.pack-name em { margin-left: 8px; padding: 2px 8px; border-radius: 100px; background: var(--red); color: #fff; font-style: normal; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; vertical-align: 2px }
++.pack-name em { margin-left: 8px; padding: 2px 8px; border-radius: 100px; background: var(--primary); color: var(--on-primary); font-style: normal; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; vertical-align: 2px }
+ .pack-rate { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 5px; margin-top: 3px; font-size: 14px; color: #70757a }
+ .pack-rate b { color: #3c4043; font-weight: 400 }
+ .pack-addr { margin-top: 2px; font-size: 14px; color: #70757a }
+@@ -615,4 +622,31 @@ tr.total td { background: var(--tint); font-weight: 800; border-top: 2px solid v
+   .gsearch-icons svg { width: 15px; height: 15px }
+   .gsearch-div { height: 16px }
+   .gsearch, .gsearch * { -webkit-print-color-adjust: exact; print-color-adjust: exact }
+-}
+\ No newline at end of file
++}
++
++/* ---------- Brand colour picker (header) ---------- */
++.top-right { display: flex; align-items: center; gap: 10px }
++.tp { position: relative }
++.tp button { box-shadow: none; transition: background .15s, border-color .15s }
++.tp .tp-btn {
++  display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 100px;
++  background: #fff; color: var(--text2); border: 1px solid var(--line); font: 600 12.5px 'Inter', sans-serif;
++}
++.tp .tp-btn:hover:not(:disabled) { background: var(--tint); border-color: var(--primary-edge) }
++.tp-dot { width: 16px; height: 16px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(16, 16, 18, .18) }
++.tp-panel {
++  position: absolute; right: 0; top: calc(100% + 10px); z-index: 50; width: 260px; max-width: calc(100vw - 40px);
++  background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px; box-shadow: 0 18px 40px -12px rgba(16, 16, 18, .3);
++}
++.tp-title { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px }
++.tp-swatches { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; margin-bottom: 12px }
++.tp .tp-sw { width: 100%; aspect-ratio: 1; padding: 0; border-radius: 50%; border: 0; box-shadow: inset 0 0 0 1px rgba(16, 16, 18, .18) }
++.tp .tp-sw.on { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--black) }
++.tp-row { display: flex; gap: 8px; align-items: center }
++.tp-wheel { flex: none; width: 44px; height: 44px; padding: 2px; border: 1.5px solid var(--line); border-radius: 10px; background: #fff; cursor: pointer }
++.tp-hex { flex: 1 1 auto; min-width: 0; padding: 11px 12px; font: 600 14px/1 ui-monospace, 'SFMono-Regular', Menlo, monospace; text-transform: lowercase }
++.tp-hex[aria-invalid="true"] { border-color: var(--error) }
++.tp-err { margin: 8px 0 0; font-size: 12.5px; color: var(--error) }
++.tp .tp-reset { display: block; width: 100%; margin-top: 12px; padding: 9px 12px; font-size: 12.5px; background: none; color: var(--primary-text); border: 1px solid var(--line); border-radius: 8px }
++.tp .tp-reset:hover:not(:disabled) { background: var(--tint) }
++@media (max-width: 520px) { .top { flex-wrap: wrap; gap: 10px } .tp .tp-btn span { display: none } .tp .tp-btn { padding: 8px 10px } }
+diff --git a/src/theme.js b/src/theme.js
+new file mode 100644
+index 0000000..308b5af
+--- /dev/null
++++ b/src/theme.js
+@@ -0,0 +1,122 @@
++// Brand colour engine, shared by all three apps (audit, gbp-health, website-speed).
++// Give it ONE hex code; it works out every shade the UI needs and writes them as CSS variables
++// on <html>. Nothing else in the app needs to know which colour is chosen.
++// This file has no framework code, so the same copy works in every app. Keep the copies identical.
++
++export const DEFAULT_PRIMARY = '#e0142a' // mmore.works red
++export const PRESETS = [
++  { name: 'Red', hex: '#e0142a' },
++  { name: 'Orange', hex: '#f97316' },
++  { name: 'Yellow', hex: '#facc15' },
++  { name: 'Green', hex: '#16a34a' },
++  { name: 'Teal', hex: '#0d9488' },
++  { name: 'Blue', hex: '#2563eb' },
++  { name: 'Purple', hex: '#7c3aed' },
++  { name: 'Pink', hex: '#db2777' },
++]
++
++const STORE_KEY = 'brand_primary'
++const URL_PARAM = 'brand' // e.g. ?brand=7c3aed lets you send a link that opens in that colour
++
++// The default red keeps the exact shades the apps were designed with, so nothing changes
++// for visitors who never pick a colour. Any other colour gets shades worked out from it.
++const DEFAULT_SHADES = {
++  'primary-dark': '#b80f22', 'primary-text': '#b80f22', 'primary-tint': '#fbdde0',
++  'primary-soft': '#fdf1f1', 'primary-line': '#eee0e0', 'primary-edge': '#f6c9c9', 'primary-bright': '#ff8a96',
++}
++
++// ---------- colour maths ----------
++// Accepts "#abc", "abc", "#aabbcc", "AABBCC" (spaces ignored). Returns "#rrggbb" or null.
++export function normalizeHex(input) {
++  let h = String(input == null ? '' : input).trim().replace(/^#/, '')
++  if (/^[0-9a-f]{3}$/i.test(h)) h = h.split('').map((c) => c + c).join('')
++  return /^[0-9a-f]{6}$/i.test(h) ? '#' + h.toLowerCase() : null
++}
++const toRgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))
++const toHex = (rgb) => '#' + rgb.map((v) => Math.round(Math.min(255, Math.max(0, v))).toString(16).padStart(2, '0')).join('')
++
++function rgbToHsl([r, g, b]) {
++  r /= 255; g /= 255; b /= 255
++  const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2
++  if (max === min) return [0, 0, l * 100]
++  const d = max - min, s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
++  const h = max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4
++  return [h * 60, s * 100, l * 100]
++}
++function hslToHex(h, s, l) {
++  s = Math.min(100, Math.max(0, s)) / 100; l = Math.min(100, Math.max(0, l)) / 100
++  const k = (n) => (n + h / 30) % 12, a = s * Math.min(l, 1 - l)
++  const f = (n) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)))
++  return toHex([f(0) * 255, f(8) * 255, f(4) * 255])
++}
++function luminance(hex) {
++  const [r, g, b] = toRgb(hex).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4) })
++  return 0.2126 * r + 0.7152 * g + 0.0722 * b
++}
++export function contrast(a, b) {
++  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x)
++  return (hi + 0.05) / (lo + 0.05)
++}
++// Darken a colour (keeping its hue) until it reads on the given background.
++function readableOn(hex, bg, min = 4.5) {
++  const [h, s, l0] = rgbToHsl(toRgb(hex))
++  let l = l0, out = hex
++  while (contrast(out, bg) < min && l > 4) { l -= 2; out = hslToHex(h, s, l) }
++  return out
++}
++
++// A brand colour has to be visible on a white page. Pale colours (white, cream) are refused.
++export function checkBrand(input) {
++  const hex = normalizeHex(input)
++  if (!hex) return { ok: false, hex: null, reason: 'Enter a hex colour like #7c3aed' }
++  if (contrast(hex, '#ffffff') < 1.3) return { ok: false, hex, reason: 'That colour is too light to see on a white page' }
++  return { ok: true, hex, reason: '' }
++}
++
++// hex -> every variable the stylesheet uses
++export function deriveTheme(input) {
++  const p = normalizeHex(input) || DEFAULT_PRIMARY
++  const rgb = toRgb(p), [h, s, l] = rgbToHsl(rgb)
++  const tint = hslToHex(h, Math.min(s, 85), 92)
++  const derived = {
++    primary: p,
++    'primary-dark': hslToHex(h, s, l < 25 ? l + 10 : l * 0.82), // hover state
++    'primary-tint': tint,                                        // soft backgrounds, pills, table headers
++    'primary-soft': hslToHex(h, Math.min(s, 70), 96),
++    'primary-line': hslToHex(h, Math.min(s, 25), 90),            // borders
++    'primary-edge': hslToHex(h, Math.min(s, 70), 85),
++    'primary-bright': hslToHex(h, s, Math.min(80, Math.max(l, 72))), // for use on dark backgrounds
++    'primary-text': readableOn(p, tint),                         // text sitting on tinted backgrounds
++    'primary-ink': readableOn(p, '#ffffff'),                     // text sitting on white
++    'on-primary': contrast('#ffffff', p) >= contrast('#111111', p) ? '#ffffff' : '#111111', // text on a brand-coloured button
++    'primary-rgb': rgb.join(', '),                               // for rgba(var(--primary-rgb), .4) glows
++  }
++  return p === DEFAULT_PRIMARY ? { ...derived, ...DEFAULT_SHADES } : derived
++}
++
++// ---------- apply / store ----------
++let current = DEFAULT_PRIMARY
++export const getPrimary = () => current
++
++// Applies a colour to the page. Returns the normalised hex, or null if the input was not a valid colour.
++export function applyTheme(input, { save = true } = {}) {
++  const { ok, hex } = checkBrand(input)
++  if (!ok) return null
++  const vars = deriveTheme(hex), root = document.documentElement
++  Object.keys(vars).forEach((k) => root.style.setProperty('--' + k, vars[k]))
++  const meta = document.querySelector('meta[name="theme-color"]')
++  if (meta) meta.setAttribute('content', hex)
++  current = hex
++  if (save) { try { hex === DEFAULT_PRIMARY ? localStorage.removeItem(STORE_KEY) : localStorage.setItem(STORE_KEY, hex) } catch (e) { /* private mode: still applied for this visit */ } }
++  window.dispatchEvent(new CustomEvent('brandchange', { detail: hex }))
++  return hex
++}
++
++// Call once before the app renders: ?brand=7c3aed wins, then the saved colour, then the default.
++export function initTheme() {
++  let wanted = null
++  try { wanted = new URLSearchParams(window.location.search).get(URL_PARAM) } catch (e) { /* ignore */ }
++  let fromUrl = checkBrand(wanted).ok
++  if (!fromUrl) { try { wanted = localStorage.getItem(STORE_KEY) } catch (e) { wanted = null } }
++  return applyTheme(wanted || DEFAULT_PRIMARY, { save: fromUrl }) || applyTheme(DEFAULT_PRIMARY, { save: false })
++}
+-- 
+2.43.0
+

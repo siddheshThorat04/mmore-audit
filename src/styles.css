@@ -1,12 +1,19 @@
 :root {
   --black: #101012;
-  --red: #e0142a;
-  --red-dark: #b80f22;
-  --tint: #fdf1f1;
+  /* Brand colour. theme.js overwrites these from one hex code; the values here are the defaults (mmore.works red). */
+  --primary: #e0142a; --primary-dark: #b80f22; --primary-tint: #fbdde0; --primary-soft: #fdf1f1;
+  --primary-line: #eee0e0; --primary-edge: #f6c9c9; --primary-bright: #ff8a96;
+  --primary-text: #b80f22;  /* brand-coloured text on tinted backgrounds */
+  --primary-ink: #e0142a;   /* brand-coloured text on white */
+  --on-primary: #ffffff;    /* text on a brand-coloured button */
+  --primary-rgb: 224, 20, 42;
+  /* Errors and low-position pins stay red whatever the brand colour is. */
+  --error: #b80f22; --error-bg: #fdeceb; --error-line: #f6c9c9;
+  --tint: var(--primary-soft);
   --off-white: #f6f5f4;
   --muted: #8b8b93;
   --text2: #3a3a3f;
-  --border: #eee0e0;
+  --border: var(--primary-line);
   --line: #e5e3e1;
   --good: #2e7d32;
   --mid: #d98a00;
@@ -57,23 +64,23 @@ input[type=text], input:not([type]) {
   flex: 1 1 220px; padding: 14px 16px; font: inherit;
   border: 1.5px solid var(--line); border-radius: 10px; background: #fff; color: var(--black);
 }
-input:focus { outline: none; border-color: var(--red) }
+input:focus { outline: none; border-color: var(--primary) }
 
 button, .cta a {
   font: 600 15px 'Inter', sans-serif; padding: 14px 22px; border: 0; border-radius: 10px;
-  background: var(--red); color: #fff; cursor: pointer; text-decoration: none; display: inline-block;
-  box-shadow: 0 8px 20px -8px rgba(230, 57, 70, .55); transition: background .15s;
+  background: var(--primary); color: var(--on-primary); cursor: pointer; text-decoration: none; display: inline-block;
+  box-shadow: 0 8px 20px -8px rgba(var(--primary-rgb), .55); transition: background .15s;
 }
-button:hover:not(:disabled), .cta a:hover { background: var(--red-dark) }
+button:hover:not(:disabled), .cta a:hover { background: var(--primary-dark) }
 button:disabled { opacity: .55; cursor: not-allowed; box-shadow: none }
 button.ghost { background: #fff; color: var(--text2); border: 1.5px solid var(--line); box-shadow: none }
-button.ghost:hover:not(:disabled) { background: var(--tint); color: var(--red-dark); border-color: #f6c9c9 }
-:focus-visible { outline: 3px solid rgba(230, 57, 70, .45); outline-offset: 2px }
+button.ghost:hover:not(:disabled) { background: var(--tint); color: var(--primary-text); border-color: var(--primary-edge) }
+:focus-visible { outline: 3px solid rgba(var(--primary-rgb), .45); outline-offset: 2px }
 
 /* ---------- Business results ---------- */
 .list { list-style: none; padding: 0; margin: 16px 0; display: grid; gap: 10px }
 .list li { background: #fff; border: 1px solid var(--line); border-radius: 12px; transition: border-color .15s, box-shadow .15s }
-.list li:hover { border-color: var(--red); box-shadow: 0 10px 24px -16px rgba(230, 57, 70, .5) }
+.list li:hover { border-color: var(--primary); box-shadow: 0 10px 24px -16px rgba(var(--primary-rgb), .5) }
 button.plain {
   width: 100%; text-align: left; background: none; color: var(--black); padding: 16px 18px;
   box-shadow: none; display: flex; flex-direction: column; border-radius: 12px;
@@ -88,9 +95,9 @@ button.plain span { color: var(--muted); font-weight: 400; font-size: 14px }
   border: 1.5px solid var(--line); background: #fff; border-radius: 100px;
   padding: 9px 16px; cursor: pointer; font-size: 14.5px; font-weight: 500; transition: all .15s;
 }
-.chip.on { background: var(--red); border-color: var(--red); color: #fff }
+.chip.on { background: var(--primary); border-color: var(--primary); color: var(--on-primary) }
 .chip input { position: absolute; opacity: 0; pointer-events: none }
-.chip:has(input:focus-visible) { outline: 3px solid rgba(230, 57, 70, .45); outline-offset: 2px }
+.chip:has(input:focus-visible) { outline: 3px solid rgba(var(--primary-rgb), .45); outline-offset: 2px }
 
 /* ---------- Report ---------- */
 .actions { display: flex; gap: 10px; flex-wrap: wrap; margin: 6px 0 4px }
@@ -108,14 +115,14 @@ th { background: var(--tint); color: var(--text2); font-weight: 600; font-size: 
 tr:last-child td { border-bottom: 0 }
 .n { text-align: right }
 tr.you td { background: var(--tint); font-weight: 700 }
-tr.you td:first-child { box-shadow: inset 4px 0 0 var(--red) }
+tr.you td:first-child { box-shadow: inset 4px 0 0 var(--primary) }
 
 /* Maps position strip */
 .track { display: inline-flex; align-items: center; gap: 3px }
 .track i { width: 10px; height: 20px; background: var(--line); border-radius: 3px; display: block }
 .track i.pin { background: var(--good); height: 26px }
 .track i.pin.mid { background: var(--mid) }
-.track i.pin.low { background: var(--red-dark) }
+.track i.pin.low { background: var(--error) }
 .track b { margin-left: 8px; font-size: 14px }
 .miss { color: var(--muted); font-size: 14px }
 
@@ -127,7 +134,7 @@ tr.you td:first-child { box-shadow: inset 4px 0 0 var(--red) }
 }
 .cta p { margin: 0; font-weight: 700; font-size: 18px; letter-spacing: -.01em }
 
-.error { background: #fdeceb; color: var(--red-dark); border: 1px solid #f6c9c9; padding: 12px 16px; border-radius: 10px; margin-top: 16px }
+.error { background: var(--error-bg); color: var(--error); border: 1px solid var(--error-line); padding: 12px 16px; border-radius: 10px; margin-top: 16px }
 
 .foot { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12.5px; text-align: center }
 
@@ -148,7 +155,7 @@ tr.you td:first-child { box-shadow: inset 4px 0 0 var(--red) }
   .no-print, .top, .foot { display: none !important }
   main { max-width: none; padding: 0 }
 
-  .print-head { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; margin-bottom: 18px; border-bottom: 3px solid var(--red) }
+  .print-head { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; margin-bottom: 18px; border-bottom: 3px solid var(--primary) }
   .print-head .brand { display: flex; align-items: center; gap: 10px }
   .print-head img { height: 40px; width: auto }
   .print-head strong { display: block; font-size: 16px }
@@ -156,7 +163,7 @@ tr.you td:first-child { box-shadow: inset 4px 0 0 var(--red) }
   .print-head .meta { font-size: 11px; color: var(--muted) }
 
   h1 { font-size: 24px; margin: 0 0 6px; max-width: none }
-  h2 { font-size: 14px; margin: 22px 0 8px; padding-left: 8px; border-left: 4px solid var(--red) }
+  h2 { font-size: 14px; margin: 22px 0 8px; padding-left: 8px; border-left: 4px solid var(--primary) }
   .lead { font-size: 12.5px }
   .stats { margin: 14px 0 0; gap: 8px }
   .stat { padding: 10px 12px; border-radius: 8px }
@@ -176,10 +183,10 @@ tr.you td:first-child { box-shadow: inset 4px 0 0 var(--red) }
 .search-card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 12px; margin-top: 20px; box-shadow: 0 20px 40px -28px rgba(16, 16, 18, .35) }
 .combo { position: relative; width: 100% }
 .combo gmp-place-autocomplete { width: 100%; color-scheme: light }
-.linklike { background: none; box-shadow: none; color: var(--red-dark); padding: 10px 2px; font-weight: 600; font-size: 14px; text-decoration: underline }
-.linklike:hover:not(:disabled) { background: none; color: var(--red) }
+.linklike { background: none; box-shadow: none; color: var(--primary-text); padding: 10px 2px; font-weight: 600; font-size: 14px; text-decoration: underline }
+.linklike:hover:not(:disabled) { background: none; color: var(--primary-ink) }
 
-/* Selected searches are red, unselected are white */
+/* Selected searches use the brand colour, unselected are white */
 .chip.on::before { content: '\2713'; margin-right: 6px }
 
 /* ---------- Report hero: stats on the left, map on the right ---------- */
@@ -194,7 +201,7 @@ tr.you td:first-child { box-shadow: inset 4px 0 0 var(--red) }
 .map-card { position: absolute; top: 16px; right: 16px; max-width: calc(100% - 32px); background: #fff; border-radius: 14px; padding: 10px 16px; box-shadow: 0 10px 28px -10px rgba(16, 16, 18, .4); display: flex; flex-direction: column }
 .map-card span { color: var(--muted); font-size: 12.5px; max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
 .map-note { position: absolute; left: 12px; bottom: 12px; background: rgba(255, 255, 255, .92); border-radius: 100px; padding: 4px 10px; font-size: 11.5px; color: var(--text2) }
-.pin-you { width: 30px; height: 30px; background: var(--red); border: 3px solid #fff; border-radius: 50% 50% 50% 0; transform: translateY(-6px) rotate(-45deg); box-shadow: 0 6px 14px rgba(16, 16, 18, .35); position: relative }
+.pin-you { width: 30px; height: 30px; background: var(--primary); border: 3px solid #fff; border-radius: 50% 50% 50% 0; transform: translateY(-6px) rotate(-45deg); box-shadow: 0 6px 14px rgba(16, 16, 18, .35); position: relative }
 .pin-you::after { content: ''; position: absolute; inset: 0; margin: auto; width: 8px; height: 8px; border-radius: 50%; background: #fff }
 
 /* ---------- WhatsApp ---------- */
@@ -231,7 +238,7 @@ tr.you td:first-child { box-shadow: inset 4px 0 0 var(--red) }
 /* ---------- Competitor pins and numbers ---------- */
 .pin-comp { width: 26px; height: 26px; border-radius: 50%; background: var(--black); color: #fff; font: 700 12px 'Inter', sans-serif; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; box-shadow: 0 4px 10px rgba(16, 16, 18, .35) }
 .num { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: var(--black); color: #fff; font-size: 12px; font-weight: 700; margin-right: 10px }
-.num.you-dot { background: var(--red) }
+.num.you-dot { background: var(--primary) }
 
 /* ---------- Static PDF pages (about, pricing, contact): hidden on screen; in print each image is centred on its own page ---------- */
 .print-pages { display: none }
@@ -285,12 +292,12 @@ tr.you td:first-child { box-shadow: inset 4px 0 0 var(--red) }
   .faq-list { display: grid; gap: 9px }
   .faq-item {
     break-inside: avoid; background: #fff; border: 1px solid var(--line);
-    border-left: 4px solid var(--red); border-radius: 8px; padding: 10px 14px;
+    border-left: 4px solid var(--primary); border-radius: 8px; padding: 10px 14px;
   }
   .faq-item h3 { margin: 0 0 5px; font-size: 13px; font-weight: 700; line-height: 1.35; display: flex; gap: 8px; align-items: flex-start }
   .faq-item p { margin: 0; font-size: 11.5px; line-height: 1.5; color: var(--text2) }
   .faq-q {
-    flex: none; width: 18px; height: 18px; border-radius: 50%; background: var(--red); color: #fff;
+    flex: none; width: 18px; height: 18px; border-radius: 50%; background: var(--primary); color: var(--on-primary);
     font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; margin-top: 1px;
   }
 }
@@ -335,27 +342,27 @@ tr.you td:first-child { box-shadow: inset 4px 0 0 var(--red) }
   .faq-list { display: grid; gap: 9px }
   .faq-item {
     break-inside: avoid; background: #fff; border: 1px solid var(--line);
-    border-left: 4px solid var(--red); border-radius: 8px; padding: 10px 14px;
+    border-left: 4px solid var(--primary); border-radius: 8px; padding: 10px 14px;
   }
   .faq-item h3 { margin: 0 0 5px; font-size: 13px; font-weight: 700; line-height: 1.35; display: flex; gap: 8px; align-items: flex-start }
   .faq-item p { margin: 0; font-size: 11.5px; line-height: 1.5; color: var(--text2) }
-  .faq-item a { color: var(--red-dark); font-weight: 700; text-decoration: underline }
+  .faq-item a { color: var(--primary-text); font-weight: 700; text-decoration: underline }
   .faq-q {
-    flex: none; width: 18px; height: 18px; border-radius: 50%; background: var(--red); color: #fff;
+    flex: none; width: 18px; height: 18px; border-radius: 50%; background: var(--primary); color: var(--on-primary);
     font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; margin-top: 1px;
   }
 }
 
 /* ======================================================================
-   Report redesign: revenue, neighbourhood map, plan. Keeps the red / black scheme.
+   Report redesign: revenue, neighbourhood map, plan. Keeps the brand colour / black scheme.
    ====================================================================== */
 .hero { grid-template-columns: 1fr }
-.eyebrow { font: 700 11.5px 'Inter', sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--red); margin: 44px 0 6px }
+.eyebrow { font: 700 11.5px 'Inter', sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--primary-ink); margin: 44px 0 6px }
 .sec-title { font-weight: 800; font-size: clamp(24px, 3.4vw, 32px); letter-spacing: -.02em; line-height: 1.15; margin: 0 0 10px }
 
 /* demand bars inside the search table */
 .bar { height: 6px; background: var(--tint); border-radius: 100px; margin-top: 6px; min-width: 90px; overflow: hidden }
-.bar i { display: block; height: 100%; background: var(--red); border-radius: 100px }
+.bar i { display: block; height: 100%; background: var(--primary); border-radius: 100px }
 
 /* revenue */
 .rev-hero { background: var(--black); color: #fff; border-radius: 20px; padding: 26px 28px; display: flex; justify-content: space-between; align-items: flex-end; gap: 18px; flex-wrap: wrap; margin: 18px 0 12px }
@@ -363,11 +370,11 @@ tr.you td:first-child { box-shadow: inset 4px 0 0 var(--red) }
 .rev-hero b { font-weight: 800; font-size: clamp(26px, 4.6vw, 40px); letter-spacing: -.02em; line-height: 1.1 }
 .rev-hero span { margin-left: 10px; color: #c9c9cf; font-size: 14px }
 .rev-hero .right { text-align: right }
-.rev-hero .right b { font-size: clamp(20px, 3vw, 28px); color: #ff8a96 }
+.rev-hero .right b { font-size: clamp(20px, 3vw, 28px); color: var(--primary-bright) }
 .assume { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 16px 20px; margin-bottom: 18px }
 .assume label { display: block; font-size: 10.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px }
 .assume b { font-size: 15px; font-weight: 700 }
-td.money { color: var(--red-dark); font-weight: 700 }
+td.money { color: var(--primary-text); font-weight: 700 }
 tr.total td { background: var(--tint); font-weight: 800; border-top: 2px solid var(--border) }
 
 /* neighbourhood map */
@@ -376,18 +383,18 @@ tr.total td { background: var(--tint); font-weight: 800; border-top: 2px solid v
 .map-legend { position: absolute; right: 16px; bottom: 16px; background: #fff; border-radius: 14px; padding: 12px 16px; display: flex; gap: 18px; font-size: 13px; font-weight: 600; box-shadow: 0 12px 28px -12px rgba(16, 16, 18, .45) }
 .map-legend span { display: inline-flex; align-items: center; gap: 8px }
 .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block }
-.dot.you { background: var(--red) }
+.dot.you { background: var(--primary) }
 .dot.comp { background: var(--black) }
-.pin-you { width: 34px; height: 34px; border-radius: 50%; border: 4px solid #fff; background: var(--red); transform: translateY(50%); animation: pinpulse 2.2s infinite; box-shadow: 0 6px 14px rgba(16, 16, 18, .35) }
+.pin-you { width: 34px; height: 34px; border-radius: 50%; border: 4px solid #fff; background: var(--primary); transform: translateY(50%); animation: pinpulse 2.2s infinite; box-shadow: 0 6px 14px rgba(16, 16, 18, .35) }
 .pin-you::after { width: 10px; height: 10px }
-@keyframes pinpulse { 0% { box-shadow: 0 0 0 0 rgba(224, 20, 42, .45) } 70% { box-shadow: 0 0 0 16px rgba(224, 20, 42, 0) } 100% { box-shadow: 0 0 0 0 rgba(224, 20, 42, 0) } }
+@keyframes pinpulse { 0% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), .45) } 70% { box-shadow: 0 0 0 16px rgba(var(--primary-rgb), 0) } 100% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0) } }
 .insight { margin-top: 14px; background: var(--tint); border: 1px solid var(--border); border-radius: 16px; padding: 16px 20px; font-size: 14.5px; color: var(--text2) }
 
 /* first 30 days */
 .plan .eyebrow { margin-top: 40px }
 .plan-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px }
 .plan-grid > div { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 18px }
-.plan-grid .tag { display: inline-block; background: var(--tint); color: var(--red-dark); font-weight: 700; font-size: 12px; padding: 6px 14px; border-radius: 100px }
+.plan-grid .tag { display: inline-block; background: var(--tint); color: var(--primary-text); font-weight: 700; font-size: 12px; padding: 6px 14px; border-radius: 100px }
 .plan-grid h3 { font-size: 16px; margin: 12px 0 6px }
 .plan-grid p { margin: 0; font-size: 13.5px; color: var(--text2) }
 
@@ -508,8 +515,8 @@ tr.total td { background: var(--tint); font-weight: 800; border-top: 2px solid v
   transform: translateX(-50%) rotate(45deg); border-bottom-right-radius: 3px;
 }
 .bpin .n { flex: none; width: 21px; height: 21px; border-radius: 50%; background: #fff; color: var(--black); display: grid; place-items: center; font-size: 11.5px; font-weight: 800 }
-.bpin.you { background: var(--red); font-size: 14px; padding: 6px 15px 6px 6px; box-shadow: 0 0 0 5px rgba(224, 20, 42, .22), 0 8px 20px -4px rgba(224, 20, 42, .6) }
-.bpin.you .n { width: 25px; height: 25px; color: var(--red); font-size: 14px }
+.bpin.you { background: var(--primary); font-size: 14px; padding: 6px 15px 6px 6px; box-shadow: 0 0 0 5px rgba(var(--primary-rgb), .22), 0 8px 20px -4px rgba(var(--primary-rgb), .6) }
+.bpin.you .n { width: 25px; height: 25px; color: var(--primary-ink); font-size: 14px }
 
 @media print {
   .bpin { font-size: 10px; gap: 5px; padding: 3px 9px 3px 3px; border-width: 1.5px }
@@ -523,10 +530,10 @@ tr.total td { background: var(--tint); font-weight: 800; border-top: 2px solid v
 .assume span { display: block; margin-top: 2px; font-size: 12px; color: var(--muted) }
 .cases { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px }
 .case { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px }
-.case.best { background: var(--tint); border-color: #f6c9c9 }
+.case.best { background: var(--tint); border-color: var(--primary-edge) }
 .case label { display: block; margin-bottom: 6px; font-size: 11.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted) }
 .case b { font-size: 26px; font-weight: 800; letter-spacing: -.02em }
-.case.best b { color: var(--red-dark) }
+.case.best b { color: var(--primary-text) }
 .case small { font-size: 13px; font-weight: 500; letter-spacing: 0; color: var(--muted) }
 .case p { margin: 8px 0 0; font-size: 13.5px; color: var(--text2) }
 @media (max-width: 640px) { .cases { grid-template-columns: 1fr } }
@@ -537,10 +544,10 @@ tr.total td { background: var(--tint); font-weight: 800; border-top: 2px solid v
 .pack-list { list-style: none; margin: 0; padding: 0; background: #fff; border: 1px solid var(--line); border-radius: 16px; overflow: hidden }
 .pack-item { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #dadce0 }
 .pack-item:last-child { border-bottom: 0 }
-.pack-item.you { background: var(--tint); box-shadow: inset 4px 0 0 var(--red) }
+.pack-item.you { background: var(--tint); box-shadow: inset 4px 0 0 var(--primary) }
 .pack-body { min-width: 0; flex: 1 }
 .pack-name { font-weight: 500; font-size: 16px; line-height: 1.3; color: #202124 }
-.pack-name em { margin-left: 8px; padding: 2px 8px; border-radius: 100px; background: var(--red); color: #fff; font-style: normal; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; vertical-align: 2px }
+.pack-name em { margin-left: 8px; padding: 2px 8px; border-radius: 100px; background: var(--primary); color: var(--on-primary); font-style: normal; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; vertical-align: 2px }
 .pack-rate { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 5px; margin-top: 3px; font-size: 14px; color: #70757a }
 .pack-rate b { color: #3c4043; font-weight: 400 }
 .pack-addr { margin-top: 2px; font-size: 14px; color: #70757a }
@@ -616,3 +623,30 @@ tr.total td { background: var(--tint); font-weight: 800; border-top: 2px solid v
   .gsearch-div { height: 16px }
   .gsearch, .gsearch * { -webkit-print-color-adjust: exact; print-color-adjust: exact }
 }
+
+/* ---------- Brand colour picker (header) ---------- */
+.top-right { display: flex; align-items: center; gap: 10px }
+.tp { position: relative }
+.tp button { box-shadow: none; transition: background .15s, border-color .15s }
+.tp .tp-btn {
+  display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 100px;
+  background: #fff; color: var(--text2); border: 1px solid var(--line); font: 600 12.5px 'Inter', sans-serif;
+}
+.tp .tp-btn:hover:not(:disabled) { background: var(--tint); border-color: var(--primary-edge) }
+.tp-dot { width: 16px; height: 16px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(16, 16, 18, .18) }
+.tp-panel {
+  position: absolute; right: 0; top: calc(100% + 10px); z-index: 50; width: 260px; max-width: calc(100vw - 40px);
+  background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px; box-shadow: 0 18px 40px -12px rgba(16, 16, 18, .3);
+}
+.tp-title { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px }
+.tp-swatches { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; margin-bottom: 12px }
+.tp .tp-sw { width: 100%; aspect-ratio: 1; padding: 0; border-radius: 50%; border: 0; box-shadow: inset 0 0 0 1px rgba(16, 16, 18, .18) }
+.tp .tp-sw.on { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--black) }
+.tp-row { display: flex; gap: 8px; align-items: center }
+.tp-wheel { flex: none; width: 44px; height: 44px; padding: 2px; border: 1.5px solid var(--line); border-radius: 10px; background: #fff; cursor: pointer }
+.tp-hex { flex: 1 1 auto; min-width: 0; padding: 11px 12px; font: 600 14px/1 ui-monospace, 'SFMono-Regular', Menlo, monospace; text-transform: lowercase }
+.tp-hex[aria-invalid="true"] { border-color: var(--error) }
+.tp-err { margin: 8px 0 0; font-size: 12.5px; color: var(--error) }
+.tp .tp-reset { display: block; width: 100%; margin-top: 12px; padding: 9px 12px; font-size: 12.5px; background: none; color: var(--primary-text); border: 1px solid var(--line); border-radius: 8px }
+.tp .tp-reset:hover:not(:disabled) { background: var(--tint) }
+@media (max-width: 520px) { .top { flex-wrap: wrap; gap: 10px } .tp .tp-btn span { display: none } .tp .tp-btn { padding: 8px 10px } }

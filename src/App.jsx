@@ -3,6 +3,8 @@ import { searchPlaces, getKeywords, runAudit } from './api.js'
 import { loadMaps, mapsAvailable } from './maps.js'
 import FaqPages from './FaqPages.jsx'
 import CoverPage from './CoverPage.jsx'
+import ThemePicker from './ThemePicker.jsx'
+import { getPrimary } from './theme.js'
 import { cityTier, loadTierSheet, revenueEstimate, MIN_SHARE, MAX_SHARE, MAX_R_MULTIPLE } from './tiers.js'
 import pricingPage from './assets/report/Pricing.png'
 import pageTwo from './assets/report/new_page_2.png'
@@ -85,7 +87,7 @@ function PlaceSearch({ onPick, onFail }) {
   return <div className="combo">{!ready && <span className="miss">Loading search...</span>}<div ref={host} /></div>
 }
 
-// Map for the report: you (red pin) and the competitors from the table (numbered).
+// Map for the report: you (brand-colour pin) and the competitors from the table (numbered).
 // On screen it is the interactive Google map. In the PDF it is a Static Maps image of the
 // same pins (the interactive map does not print reliably). It needs "Maps Static API"
 // enabled for the same browser key; if that image fails, the PDF falls back to the live map.
@@ -94,7 +96,7 @@ function staticMapUrl(business, competitors) {
   if (!MAPS_KEY) return ''
   const q = [
     'size=640x500', 'scale=2', 'maptype=roadmap', 'key=' + encodeURIComponent(MAPS_KEY),
-    'markers=' + encodeURIComponent('color:0xe0142a|size:mid|' + business.lat + ',' + business.lng),
+    'markers=' + encodeURIComponent('color:0x' + getPrimary().slice(1) + '|size:mid|' + business.lat + ',' + business.lng),
   ]
   let others = 0
   competitors.forEach((c) => {
@@ -297,6 +299,9 @@ export default function App() {
   const [, refreshTiers] = useState(0)
   // city tiers live in a Google Sheet (see tiers.js): load it once and redraw if the list changed
   useEffect(() => { loadTierSheet().then((changed) => { if (changed) refreshTiers((n) => n + 1) }) }, [])
+  // redraw when the brand colour changes (the PDF map image is built from it)
+  const [, setBrand] = useState(0)
+  useEffect(() => { const f = () => setBrand((n) => n + 1); window.addEventListener('brandchange', f); return () => window.removeEventListener('brandchange', f) }, [])
   const [step, setStep] = useState('find')
   const [mode, setMode] = useState(mapsAvailable() ? 'widget' : 'manual')
   const [query, setQuery] = useState('')
@@ -346,7 +351,10 @@ export default function App() {
           <img src={LOGO} alt="mmore.works" className="logo-img" />
           <div><div className="wordmark">mmore.works</div><div className="sub">Free Google audit</div></div>
         </div>
-        <span className="pill">{step === 'find' ? 'Step 1 of 3' : step === 'keywords' ? 'Step 2 of 3' : 'Your report'}</span>
+        <div className="top-right">
+          <ThemePicker />
+          <span className="pill">{step === 'find' ? 'Step 1 of 3' : step === 'keywords' ? 'Step 2 of 3' : 'Your report'}</span>
+        </div>
       </header>
       {error && <p className="error" role="alert">{error}</p>}
 
@@ -381,7 +389,7 @@ export default function App() {
       {step === 'keywords' && (
         <section>
           <h1>What do your customers search for?</h1>
-          <p className="lead"><strong>{chosen.name}</strong>, {chosen.address}. Keep the searches that matter to you (red), or add your own.</p>
+          <p className="lead"><strong>{chosen.name}</strong>, {chosen.address}. Keep the searches that matter to you (highlighted), or add your own.</p>
           <div className="chips">{keywords.map((k) => (
             <label key={k} className={'chip' + (picked.includes(k) ? ' on' : '')}>
               <input type="checkbox" checked={picked.includes(k)} onChange={() => setPicked(picked.includes(k) ? picked.filter((x) => x !== k) : [...picked, k])} />{k}</label>))}</div>
